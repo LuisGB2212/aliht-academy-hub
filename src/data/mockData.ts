@@ -1,4 +1,4 @@
-import type { Category, Module, Lesson } from '@/types/lms'
+import type { Category, Module, Lesson } from '@/types/academy-type'
 
 export const categories: Category[] = [
   {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { useLmsStore } from '@/stores/lms'
+import { useLmsStore } from '@/stores/aliht-context-store'
 import Breadcrumbs from '@/components/Breadcrumbs.vue'
 import { CheckCircle2, ArrowLeft, ArrowRight, ExternalLink, FileText, PlayCircle } from 'lucide-vue-next'
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { useLmsStore } from '@/stores/lms'
+import { useLmsStore } from '@/stores/aliht-context-store'
 import {
     TrendingUp, Settings, Users, Monitor, BookOpen,
     ArrowRight, CheckCircle2, Clock,
@@ -50,7 +50,7 @@ const inProgressCourses = computed(() => {
         </div>
 
         <!-- Stats -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <!-- <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <div class="bg-card rounded-xl p-5 border border-border card-hover">
                 <div class="flex items-center gap-3 mb-2">
                     <div class="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
@@ -79,7 +79,7 @@ const inProgressCourses = computed(() => {
                 </div>
                 <p class="text-2xl font-bold text-foreground">{{ completedCourses }}</p>
             </div>
-        </div>
+        </div> -->
 
         <!-- Filters -->
         <div class="flex flex-col sm:flex-row gap-3 mb-6">
@@ -97,12 +97,11 @@ const inProgressCourses = computed(() => {
         </div>
 
         <!-- Course Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <RouterLink v-for="cat in filteredCats" :key="cat.id" :to="`/curso/${cat.id}`"
                 class="bg-card rounded-xl border border-border overflow-hidden card-hover group">
                 <!-- Color bar -->
                 <div class="h-2" :style="`background: linear-gradient(90deg, ${cat.color}, ${cat.color}88)`" />
-
                 <div class="p-5">
                     <div class="flex items-start gap-3 mb-3">
                         <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"

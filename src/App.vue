@@ -4,8 +4,7 @@ import AppLayout from '@/components/AppLayout.vue'
 function setThemeBySubdomain() {
   const host = window.location.hostname;
   const subdomain = host.split('.')[0];
-  console.log(window.location);
-  
+  console.log(window.location);  
 
   const themes = {
     admin: {

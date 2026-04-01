@@ -8,10 +8,10 @@ import NotFound from '@/pages/NotFound.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', component: Dashboard },
-    { path: '/curso/:categoryId', component: CourseView },
-    { path: '/curso/:categoryId/leccion/:lessonId', component: LessonView },
-    { path: '/admin', component: AdminPanel },
+    { path: '/', component: Dashboard, name: 'dashboard' },
+    { path: '/curso/:categoryId', component: CourseView, name: 'course' },
+    { path: '/curso/:categoryId/leccion/:lessonId', component: LessonView, name: 'lesson' },
+    { path: '/admin', component: AdminPanel, name: 'admin' },
     { path: '/admin/:pathMatch(.*)*', component: AdminPanel },
     { path: '/:pathMatch(.*)*', component: NotFound },
   ],
