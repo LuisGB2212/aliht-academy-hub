@@ -1,55 +1,65 @@
-export type Company = 'aliht' | 'nextravel' | 'bestravel' | 'todos'
-
-export type ContentType = 'video' | 'pdf' | 'document' | 'link' | 'text'
+export type ContentType = 'video' | 'pdf' | 'document' | 'link' | 'text' | 'mixed'
 
 export type LessonStatus = 'completed' | 'in_progress' | 'locked' | 'not_started'
 
-export interface Category {
-  id: string
+export interface Platform {
+  id: number
   name: string
-  description: string
-  icon: string
-  color: string
-  order: number
-  visibility: Company[]
-  published: boolean
-  image?: string
+  color?: string
+  image_url?: string
+  description?: string
+  visible: boolean
+  created_at?: string
+  updated_at?: string
 }
 
 export interface Module {
-  id: string
-  categoryId: string
+  id: number
   name: string
-  shortDescription: string
-  longDescription: string
+  description?: string
   order: number
-  published: boolean
+  visible: boolean
+  platforms?: Platform[] // For display
+  platform_ids?: number[] // For saving
+  lessons?: Lesson[] // For nested content tree
+  created_at?: string
+  updated_at?: string
+}
+
+export interface LessonPlatformContent {
+  id?: number
+  platform_id: number
+  type: string
+  title?: string
+  content: any // JSON
+  order: number
+  visible: boolean
 }
 
 export interface Lesson {
-  id: string
-  moduleId: string
+  id: number
   title: string
-  shortDescription: string
-  longDescription: string
-  contentType: ContentType
-  contentUrl?: string
-  richTextContent?: string
+  description?: string
+  type_content: string
   order: number
-  published: boolean
-  duration?: string
+  visible: boolean
+  modules?: Module[] // For display
+  module_ids?: number[] // For saving
+  platform_contents: LessonPlatformContent[]
+  created_at?: string
+  updated_at?: string
 }
 
 export interface UserProgress {
-  lessonId: string
+  lessonId: number
   completed: boolean
   lastViewedAt?: string
 }
 
 export interface CourseProgress {
-  categoryId: string
+  platformId: number
   totalLessons: number
   completedLessons: number
   percentage: number
-  lastLessonId?: string
+  lastLessonId?: number
 }

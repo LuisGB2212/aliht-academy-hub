@@ -20,17 +20,10 @@ export default defineConfig({
       entry: path.resolve(__dirname, 'src/index.ts'),
       name: 'AlihtAcademyHub',
       fileName: (format) => `aliht-academy-hub.${format}.js`,
+      formats: ['es'],
     },
     rollupOptions: {
-      external: ['vue', 'pinia', 'vue-router', 'lucide-vue-next'],
-      output: {
-        globals: {
-          vue: 'Vue',
-          pinia: 'Pinia',
-          'vue-router': 'VueRouter',
-          'lucide-vue-next': 'LucideVueNext',
-        },
-      },
+      external: ['vue', 'pinia', 'vue-router', 'lucide-vue-next']
     },
   },
   server: {

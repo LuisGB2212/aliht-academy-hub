@@ -11,6 +11,7 @@ export interface RequestOptions {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
     headers?: Record<string, string>;
     body?: any;
+    params?: Record<string, any>;
 }
 
 export interface ApiResponse<T> {
@@ -24,7 +25,7 @@ const token = localStorage.getItem('authToken')?.replace(/['"]+/g, '');
 export const apiRepository = {
     token: localStorage.getItem('authToken')?.replace(/['"]+/g, ''),
     async request<T>(endpoint: string, options: RequestOptions = {}, agencyIdentifier: string | null = null): Promise<ApiResponse<T>> {
-        const { method = 'GET', headers = {}, body } = options;
+        const { method = 'GET', headers = {}, body, params } = options;
 
         const config: RequestInit = {
             method,
@@ -40,7 +41,18 @@ export const apiRepository = {
         if (body) config.body = JSON.stringify(body);
 
         try {
-            const url = `${BASE_URL()}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+            let url = `${BASE_URL()}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+            
+            if (params) {
+                const query = Object.entries(params)
+                    .filter(([_, v]) => v != null)
+                    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+                    .join('&');
+                if (query) {
+                    url += (url.includes('?') ? '&' : '?') + query;
+                }
+            }
+
             const response = await fetch(url, config);
             
             // Si la respuesta es 204 (No Content), no intentamos parsear JSON
@@ -50,39 +62,24 @@ export const apiRepository = {
 
             if (!response.ok || (data && data.success === false)) {
                 console.log(data);
-                // throw new ApiError({
-                //     message: data.message || `${response.status}`, 
-                //     statusCode: response.status,
-                //     code: data.message ? 'ERROR_API' : 'GENERIC_ERROR',
-                //     errors: (Object.values(data.errors || {}) as string[][]).flat()
-                // });
             }
 
             return data;
         } catch (error: any) {
-            // console.error(`API Repository Error [${method} ${endpoint}]:`, error.message);
-            // openNotification(
-            //     "error", 
-            //     error.message ?? "Algo salió mal, intente de nuevo.",
-            //     error instanceof ApiError ? (error.errors.join('<br>')) : ""
-            // );
             throw error;
         }
     },
 
-    async get<T>({endpoint, auth = true, loading = true, headers = {}, agencyIdentifier = null }: {
-        endpoint: string; auth?: boolean; loading?: boolean; headers?: Record<string, string>; agencyIdentifier?: string | null;
+    async get<T>({endpoint, auth = true, loading = true, headers = {}, agencyIdentifier = null, params }: {
+        endpoint: string; auth?: boolean; loading?: boolean; headers?: Record<string, string>; agencyIdentifier?: string | null; params?: Record<string, any>;
     }) {
-        // const { setLoadingGet } = useLoadingActions();
-        // if (loading) setLoadingGet(true);
         try {
             const finalHeaders = {
                 ...headers,
                 ...(auth && token ? { Authorization: `Bearer ${token}` } : {})
             };
-            return await this.request<T>(endpoint, { method: 'GET', headers: finalHeaders }, agencyIdentifier);
+            return await this.request<T>(endpoint, { method: 'GET', headers: finalHeaders, params }, agencyIdentifier);
         } finally {
-            // if (loading) setLoadingGet(false);
         }
     },
 

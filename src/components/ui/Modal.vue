@@ -31,7 +31,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleEscape))
     >
       <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-background/80 backdrop-blur-sm" @click="emit('close')"></div>
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-xs" @click="emit('close')"></div>
 
         <!-- Modal Content -->
         <Transition
