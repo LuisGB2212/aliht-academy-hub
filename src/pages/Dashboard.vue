@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useLmsStore } from '@/stores/aliht-context-store'
 import { config } from '@/types/lib-config-type'
-import { ArrowRight, Globe, Monitor } from 'lucide-vue-next'
+import { ArrowRight, Globe, Monitor, Settings } from 'lucide-vue-next'
 
 const store = useLmsStore()
 const router = useRouter()
@@ -50,6 +50,12 @@ const getProgress = (platformId: number) => store.getCourseProgress(platformId)
                 <div>
                     <img src="../assets/images/logo_aliht.png" alt="Logo Aliht" class="w-90 h-auto">
                 </div>
+            </div>
+
+            <div v-if="!config.agencyIdentifier && config.isAdmin" class="mb-6 flex justify-end">
+                <RouterLink to="/admin" class="text-primary font-bold bg-primary/10 hover:bg-primary/20 p-2 rounded-lg">
+                    <Settings class="w-4 h-4" />Panel de administración
+                </RouterLink>
             </div>
 
             <!-- Platform Cards -->

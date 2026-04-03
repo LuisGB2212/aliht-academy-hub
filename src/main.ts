@@ -18,9 +18,10 @@ app.use(createPinia())
 // 2. Use the plugin — it will create the router AFTER config is set
 app.use(AlihtAcademyHubPlugin, {
   apiBaseUrl: 'http://127.0.0.1:8000/api',
-  agencyIdentifier: '3',
+  agencyIdentifier: '',
   apiToken: '123',
-  cloudFrontUrl: 'https://d234567890.cloudfront.net'
+  cloudFrontUrl: 'https://dnsehdeeiyifd.cloudfront.net',
+  isAdmin: true,
 })
 
 app.mount('#app')

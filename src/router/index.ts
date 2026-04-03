@@ -34,7 +34,7 @@ export function createAcademyRouter() {
       // Redirige al usuario a su plataforma en lugar del admin
       return { name: 'course', params: { categoryId: config.agencyIdentifier } }
     }
-    if (to.params.categoryId && config.agencyIdentifier != to.params.categoryId) {
+    if (config.agencyIdentifier && to.params.categoryId && config.agencyIdentifier != to.params.categoryId) {
       // Redirige al usuario a su plataforma en lugar del admin
       return { name: 'course', params: { categoryId: config.agencyIdentifier } }
     }

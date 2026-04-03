@@ -4,6 +4,7 @@ export interface LibConfig {
     cloudFrontUrl: string;
     agencyIdentifier: string;
     apiRepository?: any;
+    isAdmin?: boolean;
 }
 
 export const config: LibConfig = {
@@ -11,6 +12,7 @@ export const config: LibConfig = {
     apiToken: '',
     cloudFrontUrl: '',
     agencyIdentifier: '',
+    isAdmin: false,
 };
 
 /**
@@ -21,4 +23,5 @@ export function setLibConfig(options: Partial<LibConfig>) {
     if (options.apiToken !== undefined) config.apiToken = options.apiToken;
     if (options.cloudFrontUrl !== undefined) config.cloudFrontUrl = options.cloudFrontUrl;
     if (options.agencyIdentifier !== undefined) config.agencyIdentifier = options.agencyIdentifier;
+    if (options.isAdmin !== undefined) config.isAdmin = options.isAdmin;
 }
