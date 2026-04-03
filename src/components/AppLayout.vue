@@ -13,19 +13,17 @@ const themeStore = useThemeStore()
 themeStore.setThemeByDomain()
 
 const authStore = useAuthStore()
-authStore.init()
+authStore.init();
 </script>
 
 <template>
     <div class="transition-colors duration-500" :class="isAdminView ? 'admin-theme' : 'user-theme'"
         style="background-color: hsl(var(--background))">
-
-        {{ authStore.isAuthenticated }}
         
-        <main class="w-full transition-all duration-500 mx-auto" v-if="authStore.isAuthenticated">
+        <main class="w-full transition-all duration-500 mx-auto" v-if="authStore.isAuthenticated && !authStore.loading">
             <slot />
         </main>
-        <main class="w-full transition-all duration-500 mx-auto" v-else>
+        <main class="w-full transition-all duration-500 mx-auto" v-else-if="!authStore.isAuthenticated && !authStore.loading">
             <!-- Pagina no tiene acceso a esta seccion -->
             <div class="flex items-center justify-center h-screen">
                 <div class="text-center">

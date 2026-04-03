@@ -21,7 +21,7 @@ const matchedDomain = allowedDomains[host] ?? 1
 
 // 2. Use the plugin — it will create the router AFTER config is set
 app.use(AlihtAcademyHubPlugin, {
-  apiBaseUrl: 'http://api.aliht.com.mx/api',
+  apiBaseUrl: 'https://api.aliht.com.mx/api',
   agencyIdentifier: matchedDomain === 1 ? null : matchedDomain,
   apiToken: '123',
   cloudFrontUrl: 'https://dnsehdeeiyifd.cloudfront.net',
