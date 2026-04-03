@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useLmsStore } from '@/stores/aliht-context-store'
 import { config } from '@/types/lib-config-type'
-import { ArrowRight, Globe, Monitor, Settings } from 'lucide-vue-next'
+import { ArrowRight, ExternalLink, Globe, Monitor, Settings } from 'lucide-vue-next'
 
 const store = useLmsStore()
 const router = useRouter()
@@ -53,8 +53,9 @@ const getProgress = (platformId: number) => store.getCourseProgress(platformId)
             </div>
 
             <div v-if="!config.agencyIdentifier && config.isAdmin" class="mb-6 flex justify-end">
-                <RouterLink to="/admin" class="text-primary font-bold bg-primary/10 hover:bg-primary/20 p-2 rounded-lg">
-                    <Settings class="w-4 h-4" />Panel de administración
+                <RouterLink to="/admin"
+                    class="text-primary font-bold bg-primary/30 hover:bg-primary/80 hover:text-primary-foreground p-2 pl-4 pr-4 rounded-lg cursor-pointer flex items-center gap-2">
+                    <Settings class="w-4 h-4" /> Panel de administración <ExternalLink class="w-4 h-4" />
                 </RouterLink>
             </div>
 
