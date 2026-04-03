@@ -13,6 +13,7 @@ import type {
   LessonPlatformContent,
   UserProgress,
   CourseProgress,
+  LessonPayload,
 } from '@/types/academy-type'
 import { apiRepository } from '@/utils/apiRepository'
 
@@ -174,11 +175,6 @@ export const useLmsStore = defineStore('lms', () => {
   }
 
   // ─── Lesson CRUD ────────────────────────────────────────────────────────────
-
-  interface LessonPayload extends Partial<Lesson> {
-    modules?: number[]
-    platform_contents?: Partial<LessonPlatformContent>[]
-  }
 
   async function createLesson(data: LessonPayload) {
     const res = await apiRepository.post<Lesson>({ endpoint: '/academy/lessons', body: data })

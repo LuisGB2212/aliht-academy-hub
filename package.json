@@ -6,22 +6,22 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/aliht-academy-hub.umd.js",
+  "main": "./dist/aliht-academy-hub.es.js",
   "module": "./dist/aliht-academy-hub.es.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/aliht-academy-hub.es.js",
-      "require": "./dist/aliht-academy-hub.umd.js"
+      "import": "./dist/aliht-academy-hub.es.js"
     },
     "./style.css": "./dist/style.css"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "vite",
-    "build": "vue-tsc && vite build",
-    "preview": "vite preview"
+    "build": "vite build",
+    "build:lib": "vite build --mode lib",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit"
   },
   "keywords": [],
   "author": "",
@@ -41,6 +41,7 @@
     "@types/node": "^25.5.0",
     "@types/sortablejs": "^1.15.9",
     "@vitejs/plugin-vue": "^6.0.5",
+    "esbuild": "^0.28.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2",
     "vite": "^8.0.3",

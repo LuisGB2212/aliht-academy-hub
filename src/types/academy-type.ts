@@ -95,3 +95,8 @@ export interface CourseProgress {
   percentage: number
   lastLessonId?: number
 }
+
+export interface LessonPayload extends Omit<Partial<Lesson>, 'modules' | 'platform_contents'> {
+  modules_ids?: number[]
+  platform_contents?: Partial<LessonPlatformContent>[]
+}

@@ -43,9 +43,9 @@ async function handleSave() {
         }
 
         if (isNew.value) {
-            await store.createModule(payload)
+            await store.createModule(payload as any)
         } else {
-            await store.updateModule(editing.value.id!, payload)
+            await store.updateModule(editing.value.id!, payload as any)
         }
         showModal.value = false
         editing.value = {}
