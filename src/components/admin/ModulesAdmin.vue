@@ -104,8 +104,6 @@ const initSortable = () => {
 }
 
 onMounted(async () => {
-    await store.fetchModules()
-    await store.fetchPlatforms()
     nextTick(() => {
         initSortable()
     })

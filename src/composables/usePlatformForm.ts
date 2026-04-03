@@ -4,7 +4,7 @@
  * Composable that encapsulates all platform CRUD + logo upload logic.
  * PlatformsAdmin.vue becomes a pure UI layer.
  */
-import { ref } from 'vue'
+import { ref }  from 'vue'
 import { useLmsStore } from '@/stores/aliht-context-store'
 import type { Platform } from '@/types/academy-type'
 import { uploadAcademyFile, getAcceptString } from '@/utils/uploadUtils'

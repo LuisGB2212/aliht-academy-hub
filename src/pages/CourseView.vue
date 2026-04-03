@@ -2,7 +2,6 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { useLmsStore } from '@/stores/aliht-context-store'
-import Breadcrumbs from '@/components/Breadcrumbs.vue'
 import {
     CheckCircle2, Circle, PlayCircle, FileText,
     Link as LinkIcon, Type, ChevronDown, Clock, ArrowRight,

@@ -32,10 +32,6 @@ function onLogoFileChange(event: Event) {
   handleLogoUpload(file)
   input.value = ''
 }
-
-onMounted(() => {
-  store.fetchPlatforms()
-})
 </script>
 
 <template>

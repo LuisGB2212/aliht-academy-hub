@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
+import { onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useLmsStore } from '@/stores/aliht-context-store'
-import { BookOpen, Layers, FileText, Shield } from 'lucide-vue-next'
+import { BookOpen, Layers, FileText, ArrowLeft } from 'lucide-vue-next'
 import PlatformsAdmin from '@/components/admin/PlatformsAdmin.vue'
 import ModulesAdmin from '@/components/admin/ModulesAdmin.vue'
 import LessonsAdmin from '@/components/admin/LessonsAdmin.vue'
@@ -16,8 +16,10 @@ const tabs = [
     { key: 'funcionalidades' as AdminTab, label: 'Funcionalidades', icon: Layers, count: () => store.modules.length },
     { key: 'tutoriales' as AdminTab, label: 'Tutoriales', icon: FileText, count: () => store.lessons.length },
 ]
-const route = useRoute()
-const isAdmin = computed(() => route.path.startsWith('/admin'))
+
+onMounted(async () => {
+  await store.fetchAllData()
+})
 </script>
 
 <template>
@@ -33,7 +35,7 @@ const isAdmin = computed(() => route.path.startsWith('/admin'))
                     </p>
                 </div>
                 <div class="mb-6 flex justify-end">
-                    <RouterLink to="/" class="text-primary font-bold bg-primary/30 hover:bg-primary/80 hover:text-primary-foreground p-2 pl-4 pr-4 rounded-lg cursor-pointer flex items-center gap-2">
+                    <RouterLink to="/" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all text-primary font-bold bg-primary/30 hover:bg-primary/80 hover:text-primary-foreground">
                         <ArrowLeft class="w-4 h-4" /> Volver al inicio
                     </RouterLink>
                 </div>

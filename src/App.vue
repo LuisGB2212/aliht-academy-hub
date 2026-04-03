@@ -6,7 +6,9 @@ import AppLayout from '@/components/AppLayout.vue'
 </script>
 
 <template>
-  <AppLayout>
-    <RouterView />
-  </AppLayout>
+  <div class="w-full h-full max-w-7xl mx-auto">
+    <AppLayout>
+      <RouterView />
+    </AppLayout>
+  </div>
 </template>
