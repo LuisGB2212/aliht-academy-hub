@@ -21,15 +21,25 @@ const isAdmin = computed(() => route.path.startsWith('/admin'))
 </script>
 
 <template>
-    <div class="w-full mx-auto">
+    <div class="w-full mx-auto px-4 py-8 md:px-6">
         <div class="mb-8">
-            <h1 class="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                Panel de <span class="gradient-text">Administración</span>
-            </h1>
-            <p class="text-muted-foreground">
-                Gestiona el contenido de la Academia Aliht Corporativo.
-            </p>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                        Panel de <span class="gradient-text">Administración</span>
+                    </h1>
+                    <p class="text-muted-foreground">
+                        Gestiona el contenido de la Academia Aliht Corporativo.
+                    </p>
+                </div>
+                <div class="mb-6 flex justify-end">
+                    <RouterLink to="/" class="text-primary font-bold bg-primary/30 hover:bg-primary/80 hover:text-primary-foreground p-2 pl-4 pr-4 rounded-lg cursor-pointer flex items-center gap-2">
+                        <ArrowLeft class="w-4 h-4" /> Volver al inicio
+                    </RouterLink>
+                </div>
+            </div>
         </div>
+
 
         <!-- Tabs -->
         <div class="flex gap-2 mb-6 border-b border-border pb-3">
