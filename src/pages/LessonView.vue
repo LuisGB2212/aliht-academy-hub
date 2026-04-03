@@ -62,9 +62,9 @@ function getContent(pc: any): string {
         <!-- Breadcrumb -->
         <div class="mb-6">
             <Breadcrumbs :items="[
-                { label: 'Dashboard', to: '/' },
-                { label: platform.name, to: `/curso/${platform.id}` },
-                { label: firstModule?.name || 'Funcionalidad', to: `/curso/${platform.id}` },
+                { label: 'Dashboard', to: { name: 'dashboard' } },
+                { label: platform.name, to: { name: 'course', params: { categoryId: platform.id } } },
+                { label: firstModule?.name || 'Funcionalidad', to: { name: 'course', params: { categoryId: platform.id } } },
                 { label: lesson.title },
             ]" />
         </div>
@@ -81,7 +81,7 @@ function getContent(pc: any): string {
                     </h2>
 
                     <div class="space-y-1 max-h-[70vh] overflow-auto pr-1">
-                        <RouterLink v-for="l in allLessons" :key="l.id" :to="`/curso/${platformId}/leccion/${l.id}`"
+                        <RouterLink v-for="l in allLessons" :key="l.id" :to="{ name: 'lesson', params: { categoryId: platformId, lessonId: l.id } }"
                             class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all group border"
                             :class="l.id === lessonId
                                 ? 'bg-primary/10 text-primary border-primary/20 shadow-sm'
@@ -203,7 +203,7 @@ function getContent(pc: any): string {
                 <!-- Navigation -->
                 <div class="flex items-center justify-between pt-2">
 
-                    <RouterLink v-if="prevLesson" :to="`/curso/${platformId}/leccion/${prevLesson.id}`"
+                    <RouterLink v-if="prevLesson" :to="{ name: 'lesson', params: { categoryId: platformId, lessonId: prevLesson.id } }"
                         class="flex items-center gap-3 px-5 py-3 rounded-xl bg-card border border-border text-sm font-semibold text-muted-foreground hover:text-foreground hover:border-primary/30 transition">
                         <ArrowLeft class="w-4 h-4" />
                         <span class="hidden sm:inline">Anterior</span>
@@ -211,13 +211,13 @@ function getContent(pc: any): string {
 
                     <div v-else />
 
-                    <RouterLink v-if="nextLesson" :to="`/curso/${platformId}/leccion/${nextLesson.id}`"
+                    <RouterLink v-if="nextLesson" :to="{ name: 'lesson', params: { categoryId: platformId, lessonId: nextLesson.id } }"
                         class="flex items-center gap-3 px-6 py-3 rounded-xl gradient-bg text-primary-foreground text-sm font-semibold shadow-md hover:scale-[1.03] transition">
                         <span class="hidden sm:inline">Siguiente</span>
                         <ArrowRight class="w-4 h-4" />
                     </RouterLink>
 
-                    <RouterLink v-else :to="`/curso/${platformId}`"
+                    <RouterLink v-else :to="{ name: 'course', params: { categoryId: platformId } }"
                         class="flex items-center gap-3 px-6 py-3 rounded-xl gradient-bg text-primary-foreground text-sm font-semibold shadow-md hover:scale-[1.03] transition">
                         Finalizar Curso
                         <ArrowRight class="w-4 h-4" />
@@ -233,7 +233,7 @@ function getContent(pc: any): string {
         <PlayCircle class="w-12 h-12 mb-4 opacity-20" />
         <h3 class="text-lg font-semibold">Tutorial no encontrado</h3>
         <p class="text-sm">El recurso solicitado no existe o fue movido.</p>
-        <RouterLink :to="platform ? `/curso/${platform.id}` : '/'"
+        <RouterLink :to="platform ? { name: 'course', params: { categoryId: platform.id } } : { name: 'dashboard' }"
             class="mt-6 text-sm font-semibold text-primary hover:underline">
             Volver
         </RouterLink>

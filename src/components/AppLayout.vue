@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 
-const isAdminView = computed(() => route.path.startsWith('/admin'))
+const isAdminView = computed(() => String(route.name || '').startsWith('admin'))
 
 const themeStore = useThemeStore()
 themeStore.setThemeByDomain()

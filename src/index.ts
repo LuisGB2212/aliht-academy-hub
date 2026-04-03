@@ -1,5 +1,6 @@
 import { App } from 'vue';
 import { LibConfig, config as libConfig, setLibConfig } from './types/lib-config-type';
+import { createAcademyRouter } from './router/index';
 import AppLayout from './components/AppLayout.vue';
 import Dashboard from './pages/Dashboard.vue';
 import CourseView from './pages/CourseView.vue';
@@ -19,18 +20,23 @@ export {
   AdminPanel
 };
 
-// Export types and config setter
+// Export types, config setter, and router factory
 export type { LibConfig };
-export { setLibConfig };
+export { setLibConfig, createAcademyRouter };
 
 // Export the plugin
 export default {
   install: (app: App, options: LibConfig) => {
-    // Inject configuration
+    // 1. Inject configuration FIRST (before router creation)
     if (options) {
       Object.assign(libConfig, options);
+      setLibConfig(options);
     }
 
+    // 2. Create router AFTER config is set so agencyIdentifier is available for base path
+    const router = createAcademyRouter();
+    app.use(router);
+    
     app.provide('libConfig', libConfig);
 
     // Register global components if needed
@@ -39,4 +45,3 @@ export default {
     app.component('AlihtAcademyAdminHub', AlihtAcademyAdminHub);
   }
 };
-

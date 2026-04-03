@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import type { RouteLocationRaw } from 'vue-router'
 import { ChevronRight } from 'lucide-vue-next'
 
 interface BreadcrumbItem {
   label: string
-  to?: string
+  to?: RouteLocationRaw
 }
 
 defineProps<{ items: BreadcrumbItem[] }>()

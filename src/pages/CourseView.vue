@@ -152,7 +152,7 @@ const contentIcons: Record<string, any> = {
                         class="border-t border-border/50 bg-muted/10 divide-y divide-border/40">
 
                         <RouterLink v-for="lesson in store.getModuleLessons(mod.id)" :key="lesson.id"
-                            :to="`/plataforma/${platformId}/leccion/${lesson.id}`"
+                            :to="{ name: 'lesson', params: { categoryId: platformId, lessonId: lesson.id } }"
                             class="flex items-center gap-4 px-5 md:px-6 py-4 group/item transition-all hover:bg-muted">
 
                             <!-- Status icon -->

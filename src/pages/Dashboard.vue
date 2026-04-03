@@ -1,19 +1,29 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { useLmsStore } from '@/stores/aliht-context-store'
+import { config } from '@/types/lib-config-type'
 import { ArrowRight, Globe, Monitor } from 'lucide-vue-next'
 
 const store = useLmsStore()
-
-const currentPlatformId = ref<number | null>(null)
+const router = useRouter()
 
 async function initDashboard() {
     await store.fetchPlatforms()
 
+    /**
+     * Si hay agencyIdentifier configurado, redirigimos directamente a esa plataforma.
+     * El agencyIdentifier actúa como identificador de la plataforma asignada al usuario.
+     * Esto convierte a AlihtAcademyUserHub en una entrada directa sin selección de plataforma.
+     */
+    if (config.agencyIdentifier && store.platforms.length > 0) {
+        router.replace({ name: 'course', params: { categoryId: config.agencyIdentifier } })
+        return
+    }
+
+    // Sin agencyIdentifier: carga el contenido del primer dashboard para mostrar progreso
     if (store.platforms.length > 0) {
-        currentPlatformId.value = store.platforms[0].id
-        await store.fetchPlatformContent(currentPlatformId.value)
+        await store.fetchPlatformContent(store.platforms[0].id)
     }
 }
 
@@ -26,7 +36,7 @@ const getProgress = (platformId: number) => store.getCourseProgress(platformId)
 
 <template>
     <div class="flex items-center justify-center min-h-screen">
-        <div>
+        <div v-if="!config.agencyIdentifier">
             <!-- Header -->
             <div class="mb-6 flex items-center justify-between">
                 <div>
@@ -45,7 +55,7 @@ const getProgress = (platformId: number) => store.getCourseProgress(platformId)
             <!-- Platform Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <RouterLink v-for="platform in store.platforms.filter(p => p.visible)" :key="platform.id"
-                    :to="`/plataforma/${platform.id}`"
+                    :to="{ name: 'course', params: { categoryId: platform.id } }"
                     class="bg-card rounded-2xl border border-border overflow-hidden card-hover group shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all">
                     <!-- Color bar -->
                     <div class="h-2 w-full"
@@ -99,6 +109,9 @@ const getProgress = (platformId: number) => store.getCourseProgress(platformId)
                 <h3 class="text-lg font-bold text-foreground">No se encontraron resultados</h3>
                 <p class="text-muted-foreground text-sm max-w-xs mx-auto">Prueba ajustando tus filtros o términos de búsqueda.</p>
             </div>
+        </div>
+        <div v-else>
+            <div></div>
         </div>
     </div>
 </template>
