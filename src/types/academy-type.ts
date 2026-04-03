@@ -100,3 +100,12 @@ export interface LessonPayload extends Omit<Partial<Lesson>, 'modules' | 'platfo
   modules_ids?: number[]
   platform_contents?: Partial<LessonPlatformContent>[]
 }
+
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  is_aliht: boolean;
+  agency_id: number;
+  agency_name: string;
+}

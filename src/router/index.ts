@@ -29,12 +29,21 @@ export function createAcademyRouter() {
    * Sin agencyIdentifier = modo admin libre → puede acceder a todo.
    */
   router.beforeEach((to) => {
+    const token = to.query.token;
+    if (token) {
+      localStorage.setItem('authToken', token as string);
+      config.apiToken = token as string;
+      return {
+        name: 'dashboard', 
+      };
+    }
+
     const isAdminRoute = String(to.name || '').startsWith('admin') || to.path.startsWith('/admin')
     if (isAdminRoute && config.agencyIdentifier) {
       // Redirige al usuario a su plataforma en lugar del admin
       return { name: 'course', params: { categoryId: config.agencyIdentifier } }
     }
-    if (config.agencyIdentifier && to.params.categoryId && config.agencyIdentifier != to.params.categoryId) {
+    if (config.agencyIdentifier && to.params.categoryId && config.agencyIdentifier != Number(to.params.categoryId)) {
       // Redirige al usuario a su plataforma en lugar del admin
       return { name: 'course', params: { categoryId: config.agencyIdentifier } }
     }

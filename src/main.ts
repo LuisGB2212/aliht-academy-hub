@@ -15,10 +15,14 @@ import AlihtAcademyHubPlugin, { setLibConfig } from './index'
 const app = createApp(App)
 app.use(createPinia())
 
+const host = window.location.hostname
+const allowedDomains = { 'aliht': 1, 'nextravel': 2, 'bestravel': 3 }
+const matchedDomain = allowedDomains[host] ?? 1
+
 // 2. Use the plugin — it will create the router AFTER config is set
 app.use(AlihtAcademyHubPlugin, {
-  apiBaseUrl: 'http://127.0.0.1:8000/api',
-  agencyIdentifier: '',
+  apiBaseUrl: 'http://api.aliht.com.mx/api',
+  agencyIdentifier: matchedDomain === 1 ? null : matchedDomain,
   apiToken: '123',
   cloudFrontUrl: 'https://dnsehdeeiyifd.cloudfront.net',
   isAdmin: true,

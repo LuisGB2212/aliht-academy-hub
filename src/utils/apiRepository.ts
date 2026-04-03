@@ -61,7 +61,7 @@ export const apiRepository = {
             const data = await response.json();
 
             if (!response.ok || (data && data.success === false)) {
-                console.log(data);
+                throw new Error(data.message);
             }
 
             return data;

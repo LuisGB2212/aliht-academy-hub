@@ -2,7 +2,7 @@ export interface LibConfig {
     apiBaseUrl: string;
     apiToken: string;
     cloudFrontUrl: string;
-    agencyIdentifier: string;
+    agencyIdentifier: number;
     apiRepository?: any;
     isAdmin?: boolean;
 }
@@ -11,7 +11,7 @@ export const config: LibConfig = {
     apiBaseUrl: 'http://127.0.0.1:8080',
     apiToken: '',
     cloudFrontUrl: '',
-    agencyIdentifier: '',
+    agencyIdentifier: 1,
     isAdmin: false,
 };
 
