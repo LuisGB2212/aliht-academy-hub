@@ -21,9 +21,6 @@ onMounted(() => {
     initDashboard()
 })
 
-const filter = ref<'all' | 'in_progress' | 'completed'>('all')
-const search = ref('')
-
 const getProgress = (platformId: number) => store.getCourseProgress(platformId)
 </script>
 
@@ -47,26 +44,26 @@ const getProgress = (platformId: number) => store.getCourseProgress(platformId)
 
             <!-- Platform Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <RouterLink v-for="plat in store.platforms.filter(p => p.visible)" :key="plat.id"
-                    :to="`/curso/${plat.id}`"
+                <RouterLink v-for="platform in store.platforms.filter(p => p.visible)" :key="platform.id"
+                    :to="`/plataforma/${platform.id}`"
                     class="bg-card rounded-2xl border border-border overflow-hidden card-hover group shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all">
                     <!-- Color bar -->
                     <div class="h-2 w-full"
-                        :style="`background: linear-gradient(90deg, ${plat.color || '#3597d4'}, ${plat.color || '#3597d4'}88)`" />
+                        :style="`background: linear-gradient(90deg, ${platform.color || '#3597d4'}, ${platform.color || '#3597d4'}88)`" />
                     <div class="p-6">
                         <div class="flex items-start gap-4 mb-4">
                             <div class="w-16 h-16 rounded-xl flex items-center justify-center shrink-0 shadow-inner overflow-hidden border border-border"
-                                :style="`background-color: ${plat.color || '#3597d4'}15`">
-                                <img v-if="plat.image_url" :src="plat.image_url" class="w-14 h-14 object-cover" />
-                                <Monitor v-else class="w-6 h-6" :style="`color: ${plat.color || '#3597d4'}`" />
+                                :style="`background-color: ${platform.color || '#3597d4'}15`">
+                                <img v-if="platform.image_url" :src="platform.image_url" class="w-14 h-14 object-cover" />
+                                <Monitor v-else class="w-6 h-6" :style="`color: ${platform.color || '#3597d4'}`" />
                             </div>
                             <div class="min-w-0">
                                 <h3
                                     class="font-bold text-foreground text-lg group-hover:text-primary transition-colors truncate">
-                                    {{ plat.name }}
+                                    {{ platform.name }}
                                 </h3>
                                 <p class="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">{{
-                                    plat.description || 'Academia corporativa de ' + plat.name }}</p>
+                                    platform.description || 'Academia corporativa de ' + platform.name }}</p>
                             </div>
                         </div>
 
@@ -80,7 +77,7 @@ const getProgress = (platformId: number) => store.getCourseProgress(platformId)
                                     </div>
                                 </div>
                                 <span class="text-[11px] text-muted-foreground font-medium ml-1">
-                                    {{ getProgress(plat.id).totalLessons }} contenidos
+                                    {{ getProgress(platform.id).totalLessons }} contenidos
                                 </span>
                             </div>
                             <span

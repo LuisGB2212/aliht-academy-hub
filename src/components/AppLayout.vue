@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import { useThemeStore } from '@/stores/theme-branding'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 
 const isAdminView = computed(() => route.path.startsWith('/admin'))
+
+const themeStore = useThemeStore()
+themeStore.setThemeByDomain()
 
 </script>
 

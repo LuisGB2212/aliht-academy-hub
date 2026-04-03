@@ -10,29 +10,6 @@ setLibConfig({
   apiToken: 'your-token-here'
 })
 
-function setThemeBySubdomain() {
-  const host = window.location.hostname; 
-
-  const allowedDomains = ['nextravel', 'bestravel'];
-  const matchedDomain = allowedDomains.find(domain => host.includes(domain)) ?? 'default';
-
-  const themes = {
-    bestravel: { primary: "50 98% 50%", secondary: "48 100% 40%" },
-    nextravel: { primary: "355 85% 48%", secondary: "355 85% 48%" },
-    default: { primary: "200 64% 52%", secondary: "200 64% 52%" }
-  };
-
-  const themeSelection = themes[matchedDomain as keyof typeof themes];
-  const root = document.documentElement;
-
-  root.style.setProperty('--primary', themeSelection.primary);
-  root.style.setProperty('--secondary', themeSelection.secondary);
-}
-
-setThemeBySubdomain();
-
-const currentHub = ref<'user' | 'admin'>('user')
-
 </script>
 
 <template>
