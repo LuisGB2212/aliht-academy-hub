@@ -7,8 +7,10 @@ import { ArrowRight, ExternalLink, Globe, Monitor, Settings } from 'lucide-vue-n
 
 const store = useLmsStore()
 const router = useRouter()
+const loading = ref(false)
 
 async function initDashboard() {
+    loading.value = true
     await store.fetchPlatforms()
 
     /**
@@ -16,7 +18,7 @@ async function initDashboard() {
      * El agencyIdentifier actúa como identificador de la plataforma asignada al usuario.
      * Esto convierte a AlihtAcademyUserHub en una entrada directa sin selección de plataforma.
      */
-    if (config.agencyIdentifier && store.platforms.length > 0) {
+    if (config.agencyIdentifier && store.platforms.length > 0 && config.agencyIdentifier !== 1) {
         router.replace({ name: 'course', params: { categoryId: config.agencyIdentifier } })
         return
     }
@@ -25,6 +27,7 @@ async function initDashboard() {
     if (store.platforms.length > 0) {
         await store.fetchPlatformContent(store.platforms[0].id)
     }
+    loading.value = false
 }
 
 onMounted(() => {
@@ -36,7 +39,7 @@ const getProgress = (platformId: number) => store.getCourseProgress(platformId)
 
 <template>
     <div class="flex items-center justify-center min-h-screen">
-        <div v-if="!config.agencyIdentifier">
+        <div v-if="!config.agencyIdentifier || config.agencyIdentifier === 1 && !loading">
             <!-- Header -->
             <div class="mb-6 flex items-center justify-between">
                 <div>
@@ -52,7 +55,7 @@ const getProgress = (platformId: number) => store.getCourseProgress(platformId)
                 </div>
             </div>
 
-            <div v-if="!config.agencyIdentifier && config.isAdmin" class="mb-6 flex justify-end">
+            <div v-if="!config.agencyIdentifier || config.agencyIdentifier === 1" class="mb-6 flex justify-end">
                 <RouterLink to="/admin"
                     class="text-primary font-bold bg-primary/30 hover:bg-primary/80 hover:text-primary-foreground p-2 pl-4 pr-4 rounded-lg cursor-pointer flex items-center gap-2">
                     <Settings class="w-4 h-4" /> Panel de administración <ExternalLink class="w-4 h-4" />
@@ -115,6 +118,12 @@ const getProgress = (platformId: number) => store.getCourseProgress(platformId)
                 </div>
                 <h3 class="text-lg font-bold text-foreground">No se encontraron resultados</h3>
                 <p class="text-muted-foreground text-sm max-w-xs mx-auto">Prueba ajustando tus filtros o términos de búsqueda.</p>
+            </div>
+        </div>
+        <div v-else-if="loading" class="flex items-center justify-center min-h-screen">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p class="text-muted-foreground">Cargando contenido...</p>
             </div>
         </div>
         <div v-else>

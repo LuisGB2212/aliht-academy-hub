@@ -14,7 +14,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
 
     try {
-        if (config.agencyIdentifier == 1) {
+        if (config.agencyIdentifier === 1) {
             // La peticion va a aliht
             const data = await apiRepository.get<User>({
                 endpoint: '/admin/user',
@@ -48,9 +48,9 @@ export const useAuthStore = defineStore('auth', () => {
                 loading.value = false;
                 isAuthenticated.value = true;
                 config.apiBaseUrl = tempUrl;
+            } else {
+                throw new Error('No se encontro el subdomain');
             }
-
-            throw new Error('No se encontro el subdomain');
         }
     } catch (error) {
         console.error(error)

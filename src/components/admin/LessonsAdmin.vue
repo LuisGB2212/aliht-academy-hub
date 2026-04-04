@@ -2,7 +2,7 @@
 import { onMounted, nextTick, ref } from 'vue'
 import { useLmsStore } from '@/stores/aliht-context-store'
 import { useLessonForm } from '@/composables/useLessonForm'
-import type { Lesson, ContentType } from '@/types/academy-type'
+import type { ContentType } from '@/types/academy-type'
 import {
     Plus, Edit, Trash2, Eye, EyeOff, GripVertical, Loader2,
     Video, FileText, Link, Type, Globe, Monitor, ImageIcon,

@@ -1,21 +1,24 @@
 <script setup lang="ts">
-import { computed, watch, onMounted } from 'vue'
+import { computed, watch, onMounted, ref } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { useLmsStore } from '@/stores/aliht-context-store'
 import Breadcrumbs from '@/components/Breadcrumbs.vue'
-import { CheckCircle2, ArrowLeft, ArrowRight, ExternalLink, FileText, PlayCircle, Monitor, Globe } from 'lucide-vue-next'
+import { CheckCircle2, ArrowLeft, ArrowRight, ExternalLink, PlayCircle, Monitor, Globe } from 'lucide-vue-next'
 
 const route = useRoute()
 const store = useLmsStore()
 
 const platformId = computed(() => parseInt(route.params.categoryId as string))
 const lessonId = computed(() => parseInt(route.params.lessonId as string))
+const loading = ref(false)
 
 onMounted(async () => {
+    loading.value = true
     await store.fetchPlatforms()
     if (platformId.value) {
         await store.fetchPlatformContent(platformId.value)
     }
+    loading.value = false
 })
 
 const platform = computed(() => store.platforms.find(p => p.id === platformId.value))
@@ -48,17 +51,17 @@ watch(lessonId, (id) => {
     if (id) store.markLessonViewed(id)
 }, { immediate: true })
 
-function getContent(pc: any): string {
-    if (!pc || !pc.content) return ''
-    if (typeof pc.content === 'object' && pc.content !== null) {
-        return pc.content.value || ''
+function getContent(platformContent: any): string {
+    if (!platformContent || !platformContent.content) return ''
+    if (typeof platformContent.content === 'object' && platformContent.content !== null) {
+        return platformContent.content.value || ''
     }
-    return pc.content // Legacy string support
+    return platformContent.content
 }
 </script>
 
 <template>
-    <div v-if="platform && lesson" class="w-full px-4 py-8 md:px-6">
+    <div v-if="platform && lesson && !loading" class="w-full px-4 py-8 md:px-6">
         <!-- Breadcrumb -->
         <div class="mb-6">
             <Breadcrumbs :items="[
@@ -81,7 +84,8 @@ function getContent(pc: any): string {
                     </h2>
 
                     <div class="space-y-1 max-h-[70vh] overflow-auto pr-1">
-                        <RouterLink v-for="l in allLessons" :key="l.id" :to="{ name: 'lesson', params: { categoryId: platformId, lessonId: l.id } }"
+                        <RouterLink v-for="l in allLessons" :key="l.id"
+                            :to="{ name: 'lesson', params: { categoryId: platformId, lessonId: l.id } }"
                             class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all group border"
                             :class="l.id === lessonId
                                 ? 'bg-primary/10 text-primary border-primary/20 shadow-sm'
@@ -112,23 +116,20 @@ function getContent(pc: any): string {
                         <!-- Video -->
                         <div v-if="platformContent.type === 'video' && getContent(platformContent)"
                             class="aspect-video bg-black">
-                            <iframe :src="getContent(platformContent)" class="w-full h-full"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen :title="platformContent.title || lesson.title" />
+                            <video :src="getContent(platformContent)" class="w-full h-full" controls />
                         </div>
 
                         <!-- PDF -->
                         <div v-else-if="platformContent.type === 'pdf' && getContent(platformContent)"
-                            class="p-12 text-center bg-muted/10">
-                            <FileText class="w-16 h-16 text-primary/40 mx-auto mb-5" />
-                            <h3 class="text-lg font-semibold text-foreground mb-2">Documento PDF</h3>
-                            <p class="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
-                                Este recurso está disponible para visualizar o descargar.
-                            </p>
+                            class="text-right bg-muted/10">
+                            <div class="aspect-video w-full mb-2">
+                                <iframe :src="getContent(platformContent)" class="w-full h-full" frameborder="0"
+                                    style="min-height: 500px;"></iframe>
+                            </div>
                             <a :href="getContent(platformContent)" target="_blank" rel="noopener noreferrer"
-                                class="inline-flex items-center gap-2 px-6 py-3 rounded-xl gradient-bg text-primary-foreground text-sm font-semibold shadow-md hover:scale-[1.03] transition">
-                                <ExternalLink class="w-4 h-4" />
+                                class="text-end inline-flex items-center gap-2 px-4 py-2 rounded-xl gradient-bg text-primary-foreground text-sm font-semibold shadow-md hover:scale-[1.03] transition">
                                 Abrir documento
+                                <ExternalLink class="w-3.5 h-3.5" />
                             </a>
                         </div>
 
@@ -145,9 +146,10 @@ function getContent(pc: any): string {
                             <p class="text-sm text-muted-foreground mb-6">
                                 Este tutorial se completa en una herramienta externa.
                             </p>
+                            <iframe :src="getContent(platformContent)" class="w-full h-full" frameborder="0"></iframe>
                             <a :href="getContent(platformContent)" target="_blank" rel="noopener noreferrer"
-                                class="inline-flex items-center gap-2 px-6 py-3 rounded-xl gradient-bg text-primary-foreground text-sm font-semibold shadow-md hover:scale-[1.03] transition">
-                                <ExternalLink class="w-4 h-4" />
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl gradient-bg text-primary-foreground text-sm font-semibold shadow-md hover:scale-[1.03] transition">
+                                <ExternalLink class="w-3.5 h-3.5" />
                                 Ir al sitio
                             </a>
                         </div>
@@ -203,7 +205,8 @@ function getContent(pc: any): string {
                 <!-- Navigation -->
                 <div class="flex items-center justify-between pt-2">
 
-                    <RouterLink v-if="prevLesson" :to="{ name: 'lesson', params: { categoryId: platformId, lessonId: prevLesson.id } }"
+                    <RouterLink v-if="prevLesson"
+                        :to="{ name: 'lesson', params: { categoryId: platformId, lessonId: prevLesson.id } }"
                         class="flex items-center gap-3 px-5 py-3 rounded-xl bg-card border border-border text-sm font-semibold text-muted-foreground hover:text-foreground hover:border-primary/30 transition">
                         <ArrowLeft class="w-4 h-4" />
                         <span class="hidden sm:inline">Anterior</span>
@@ -211,7 +214,8 @@ function getContent(pc: any): string {
 
                     <div v-else />
 
-                    <RouterLink v-if="nextLesson" :to="{ name: 'lesson', params: { categoryId: platformId, lessonId: nextLesson.id } }"
+                    <RouterLink v-if="nextLesson"
+                        :to="{ name: 'lesson', params: { categoryId: platformId, lessonId: nextLesson.id } }"
                         class="flex items-center gap-3 px-6 py-3 rounded-xl gradient-bg text-primary-foreground text-sm font-semibold shadow-md hover:scale-[1.03] transition">
                         <span class="hidden sm:inline">Siguiente</span>
                         <ArrowRight class="w-4 h-4" />
@@ -224,6 +228,14 @@ function getContent(pc: any): string {
                     </RouterLink>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div v-else-if="loading" class="flex items-center justify-center min-h-screen">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p class="text-muted-foreground">Cargando contenido...</p>
         </div>
     </div>
 

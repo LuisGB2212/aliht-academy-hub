@@ -13,11 +13,11 @@ export const AlihtAcademyAdminHub = AdminPanel;
 
 // Export components for individual use
 export {
-  AppLayout,
-  Dashboard,
-  CourseView,
-  LessonView,
-  AdminPanel
+    AppLayout,
+    Dashboard,
+    CourseView,
+    LessonView,
+    AdminPanel
 };
 
 // Export types, config setter, and router factory
@@ -26,22 +26,22 @@ export { setLibConfig, createAcademyRouter };
 
 // Export the plugin
 export default {
-  install: (app: App, options: LibConfig) => {
-    // 1. Inject configuration FIRST (before router creation)
-    if (options) {
-      Object.assign(libConfig, options);
-      setLibConfig(options);
+    install: (app: App, options: LibConfig) => {
+        // 1. Inject configuration FIRST (before router creation)
+        if (options) {
+            Object.assign(libConfig, options);
+            setLibConfig(options);
+        }
+
+        // 2. Create router AFTER config is set so agencyIdentifier is available for base path
+        const router = createAcademyRouter();
+        app.use(router);
+
+        app.provide('libConfig', libConfig);
+
+        // Register global components if needed
+        app.component('AlihtAcademyHub', AppLayout);
+        app.component('AlihtAcademyUserHub', AlihtAcademyUserHub);
+        app.component('AlihtAcademyAdminHub', AlihtAcademyAdminHub);
     }
-
-    // 2. Create router AFTER config is set so agencyIdentifier is available for base path
-    const router = createAcademyRouter();
-    app.use(router);
-    
-    app.provide('libConfig', libConfig);
-
-    // Register global components if needed
-    app.component('AlihtAcademyHub', AppLayout);
-    app.component('AlihtAcademyUserHub', AlihtAcademyUserHub);
-    app.component('AlihtAcademyAdminHub', AlihtAcademyAdminHub);
-  }
 };

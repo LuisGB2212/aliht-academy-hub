@@ -4,7 +4,7 @@ import { useRoute, RouterLink } from 'vue-router'
 import { useLmsStore } from '@/stores/aliht-context-store'
 import {
     CheckCircle2, Circle, PlayCircle, FileText,
-    Link as LinkIcon, Type, ChevronDown, Clock, ArrowRight,
+    Link as LinkIcon, Type, ChevronDown, ArrowRight,
     Monitor
 } from 'lucide-vue-next'
 
@@ -15,12 +15,15 @@ const platformId = computed(() => parseInt(route.params.categoryId as string))
 const platform = computed(() => store.platforms.find(p => p.id === platformId.value))
 const mods = computed(() => platform.value ? store.getPlatformModules(platform.value.id) : [])
 const prog = computed(() => platform.value ? store.getCourseProgress(platform.value.id) : null)
+const loading = ref(false)
 
 onMounted(async () => {
+    loading.value = true
     await store.fetchPlatforms()
     if (platformId.value) {
         await store.fetchPlatformContent(platformId.value)
     }
+    loading.value = false
 })
 
 const openModules = ref<Set<number>>(new Set())
@@ -42,14 +45,13 @@ function toggleModule(modId: number) {
 const contentIcons: Record<string, any> = {
     video: PlayCircle,
     pdf: FileText,
-    document: FileText,
     link: LinkIcon,
     text: Type,
 }
 </script>
 
 <template>
-    <div v-if="platform" class="w-full px-4 py-8 md:px-6">
+    <div v-if="platform && !loading" class="w-full px-4 py-8 md:px-6">
         <!-- Header -->
         <div class="relative bg-card rounded-2xl p-4 md:p-10 md:py-6 mb-10 shadow-xs overflow-hidden border border-border/30">
             <!-- Background glow -->
@@ -189,6 +191,13 @@ const contentIcons: Record<string, any> = {
                     </div>
                 </transition>
             </div>
+        </div>
+    </div>
+
+    <div v-else-if="loading" class="flex items-center justify-center min-h-screen">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p class="text-muted-foreground">Cargando contenido...</p>
         </div>
     </div>
 

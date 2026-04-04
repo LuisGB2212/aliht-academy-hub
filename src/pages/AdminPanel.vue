@@ -9,7 +9,7 @@ import LessonsAdmin from '@/components/admin/LessonsAdmin.vue'
 
 const store = useLmsStore()
 type AdminTab = 'plataformas' | 'funcionalidades' | 'tutoriales'
-const tab = ref<AdminTab>('plataformas')
+const tabSelected = ref<AdminTab>('plataformas')
 
 const tabs = [
     { key: 'plataformas' as AdminTab, label: 'Plataformas', icon: BookOpen, count: () => store.platforms.length },
@@ -42,22 +42,21 @@ onMounted(async () => {
             </div>
         </div>
 
-
         <!-- Tabs -->
         <div class="flex gap-2 mb-6 border-b border-border pb-3">
-            <button v-for="t in tabs" :key="t.key" @click="tab = t.key"
-                class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all" :class="tab === t.key
+            <button v-for="tab in tabs" :key="tab.key" @click="tabSelected = tab.key"
+                class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all" :class="tabSelected === tab.key
                     ? 'gradient-bg text-primary-foreground'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'" type="button">
-                <component :is="t.icon" class="w-4 h-4" />
-                {{ t.label }}
-                <span class="text-xs px-1.5 py-0.5 rounded-full" :class="tab === t.key ? 'bg-white/20' : 'bg-muted'">{{
-                    t.count() }}</span>
+                <component :is="tab.icon" class="w-4 h-4" />
+                {{ tab.label }}
+                <span class="text-xs px-1.5 py-0.5 rounded-full" :class="tabSelected === tab.key ? 'bg-white/20' : 'bg-muted'">{{
+                    tab.count() }}</span>
             </button>
         </div>
 
-        <PlatformsAdmin v-if="tab === 'plataformas'" />
-        <ModulesAdmin v-if="tab === 'funcionalidades'" />
-        <LessonsAdmin v-if="tab === 'tutoriales'" />
+        <PlatformsAdmin v-if="tabSelected === 'plataformas'" />
+        <ModulesAdmin v-if="tabSelected === 'funcionalidades'" />
+        <LessonsAdmin v-if="tabSelected === 'tutoriales'" />
     </div>
 </template>
