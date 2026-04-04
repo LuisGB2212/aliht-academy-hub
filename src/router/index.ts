@@ -30,6 +30,11 @@ export function createAcademyRouter() {
    */
   router.beforeEach((to) => {
     const token = to.query.token;
+    const subdomain = to.query.subdomain;
+    if (subdomain) {
+      localStorage.setItem('subdomain', subdomain as string);
+    }
+    
     if (token) {
       localStorage.setItem('authToken', token as string);
       config.apiToken = token as string;
@@ -37,6 +42,7 @@ export function createAcademyRouter() {
         name: 'dashboard', 
       };
     }
+
 
     const isAdminRoute = String(to.name || '').startsWith('admin') || to.path.startsWith('/admin')
     if (isAdminRoute && config.agencyIdentifier) {

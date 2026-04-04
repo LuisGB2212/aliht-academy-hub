@@ -48,7 +48,7 @@ const getProgress = (platformId: number) => store.getCourseProgress(platformId)
                     </p>
                 </div>
                 <div>
-                    <img src="../assets/images/logo_aliht.png" alt="Logo Aliht" class="w-90 h-auto">
+                    <img src="/images/logo_aliht.png" alt="Logo Aliht" class="w-90 h-auto">
                 </div>
             </div>
 

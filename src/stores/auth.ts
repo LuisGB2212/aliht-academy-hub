@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { User } from '@/types/academy-type'
 import { config } from '@/types/lib-config-type'
-import { apiRepository } from '@/utils/apiRepository'
+import { apiRepository, BASE_URL } from '@/utils/apiRepository'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -24,25 +24,33 @@ export const useAuthStore = defineStore('auth', () => {
             user.value = data.data;
             isAuthenticated.value = true;
         } else {
-            let hostname  = location.hostname;
-            let domain    = hostname;
-            let subdomain = "";
+            // let hostname  = location.hostname;
+            // let domain    = hostname;
+            // let subdomain = "";
 
-            if (hostname.includes(".")) {
-                subdomain = hostname.split(".")[0];
-                domain    = hostname.split(".").slice(1).join(".");
+            // if (hostname.includes(".")) {
+            //     subdomain = hostname.split(".")[0];
+            //     domain    = hostname.split(".").slice(1).join(".");
+            // }
+
+            // console.log(subdomain);
+            // console.log(domain);
+            const subdomain = localStorage.getItem('subdomain');
+            if (subdomain) {
+                const tempUrl = config.apiBaseUrl;
+                config.apiBaseUrl = "https://agencyapi.aliht.com.mx/api";
+                // La peticion va a la agencia
+                const data = await apiRepository.get<User>({
+                    endpoint: `/${subdomain}/user`,
+                    agencyIdentifier: subdomain
+                });
+                user.value = data.data;
+                loading.value = false;
+                isAuthenticated.value = true;
+                config.apiBaseUrl = tempUrl;
             }
 
-            console.log(subdomain);
-            console.log(domain);
-
-            // La peticion va a la agencia
-            const data = await apiRepository.get<User>({
-                endpoint: '/admin/user',
-            })
-            user.value = data.data;
-            loading.value = false;
-            isAuthenticated.value = true;
+            throw new Error('No se encontro el subdomain');
         }
     } catch (error) {
         console.error(error)

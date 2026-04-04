@@ -1,13 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="https://academia.nextravel.com.mx/images/logo_nextravel.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Academia Corporativa — Nextravel</title>
-  </head>
-  <body>
+
+<head>
+    <!-- TODO: Set the document title to the name of your application -->
+    <link rel="icon" type="image/svg+xml" href="%VITE_APP_AGENCY_IMAGE%" />
+    <title>%VITE_APP_AGENCY_NAME%</title>
+    <meta name="description" content="Agencia de viajes" />
+    <meta name="author" content="%VITE_APP_AGENCY_NAME%" />
+
+    <!-- TODO: Update og:title to match your application name -->
+    <meta property="og:title" content="Agencia de viajes" />
+    <meta property="og:description" content="Agencia de viajes" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content=%PUBLIC_URL%%VITE_APP_AGENCY_IMAGE% />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@%VITE_APP_AGENCY%" />
+    <meta name="twitter:image" content=%PUBLIC_URL%%VITE_APP_AGENCY_IMAGE% />
+</head>
+
+<body>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
-  </body>
+</body>
+
 </html>
