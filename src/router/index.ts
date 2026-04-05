@@ -29,30 +29,30 @@ export function createAcademyRouter() {
      * Sin agencyIdentifier = modo admin libre → puede acceder a todo.
      */
     router.beforeEach((to) => {
-        // const token = to.query.token;
-        // const subdomain = to.query.subdomain;
-        // if (subdomain) {
-        //     localStorage.setItem('subdomain', subdomain as string);
-        // }
+        const token = to.query.token;
+        const subdomain = to.query.subdomain;
+        if (subdomain) {
+            localStorage.setItem('subdomain', subdomain as string);
+        }
 
-        // if (token) {
-        //     localStorage.setItem('authToken', token as string);
-        //     config.apiToken = token as string;
-        //     return {
-        //         name: 'dashboard',
-        //     };
-        // }
+        if (token) {
+            localStorage.setItem('authToken', token as string);
+            config.apiToken = token as string;
+            return {
+                name: 'dashboard',
+            };
+        }
 
 
-        // const isAdminRoute = String(to.name || '').startsWith('admin') || to.path.startsWith('/admin')
-        // if (isAdminRoute && config.agencyIdentifier && config.agencyIdentifier !== 1) {
-        //     // Redirige al usuario a su plataforma en lugar del admin
-        //     return { name: 'course', params: { categoryId: config.agencyIdentifier } }
-        // }
-        // if (config.agencyIdentifier && to.params.categoryId && config.agencyIdentifier !== Number(to.params.categoryId) && config.agencyIdentifier !== 1) {
-        //     // Redirige al usuario a su plataforma en lugar del admin
-        //     return { name: 'course', params: { categoryId: config.agencyIdentifier } }
-        // }
+        const isAdminRoute = String(to.name || '').startsWith('admin') || to.path.startsWith('/admin')
+        if (isAdminRoute && config.agencyIdentifier && config.agencyIdentifier !== 1) {
+            // Redirige al usuario a su plataforma en lugar del admin
+            return { name: 'course', params: { categoryId: config.agencyIdentifier } }
+        }
+        if (config.agencyIdentifier && to.params.categoryId && config.agencyIdentifier !== Number(to.params.categoryId) && config.agencyIdentifier !== 1) {
+            // Redirige al usuario a su plataforma en lugar del admin
+            return { name: 'course', params: { categoryId: config.agencyIdentifier } }
+        }
     })
 
     return router
