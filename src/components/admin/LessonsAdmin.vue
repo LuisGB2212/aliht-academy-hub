@@ -137,7 +137,7 @@ onMounted(async () => {
                             <Monitor class="w-3 h-3" />
                             {{ lesson.platform_contents?.length || 0 }} Variantes
                         </span>
-                        <p class="truncate">{{ lesson.description || 'Sin descripción' }}</p>
+                        <p class="truncate max-w-2xl">{{ lesson.description || 'Sin descripción' }}</p>
                     </div>
                 </div>
 

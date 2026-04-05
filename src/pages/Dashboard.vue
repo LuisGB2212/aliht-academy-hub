@@ -18,15 +18,15 @@ async function initDashboard() {
      * El agencyIdentifier actúa como identificador de la plataforma asignada al usuario.
      * Esto convierte a AlihtAcademyUserHub en una entrada directa sin selección de plataforma.
      */
-    if (config.agencyIdentifier && store.platforms.length > 0 && config.agencyIdentifier !== 1) {
-        router.replace({ name: 'course', params: { categoryId: config.agencyIdentifier } })
-        return
-    }
+    // if (config.agencyIdentifier && store.platforms.length > 0 && config.agencyIdentifier !== 1) {
+    //     router.replace({ name: 'course', params: { categoryId: config.agencyIdentifier } })
+    //     return
+    // }
 
-    // Sin agencyIdentifier: carga el contenido del primer dashboard para mostrar progreso
-    if (store.platforms.length > 0) {
-        await store.fetchPlatformContent(store.platforms[0].id)
-    }
+    // // Sin agencyIdentifier: carga el contenido del primer dashboard para mostrar progreso
+    // if (store.platforms.length > 0) {
+    //     await store.fetchPlatformContent(store.platforms[0].id)
+    // }
     loading.value = false
 }
 
