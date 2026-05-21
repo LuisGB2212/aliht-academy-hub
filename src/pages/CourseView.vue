@@ -11,7 +11,6 @@ import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute();
 const store = useLmsStore();
-const authStore = useAuthStore();
 
 const platformId = computed(() => parseInt(route.params.categoryId as string))
 const platform = computed(() => store.platforms.find(p => p.id === platformId.value))
@@ -73,13 +72,6 @@ const contentIcons: Record<string, any> = {
                             'Bienvenido al centro de capacitación de ' + platform.name + '. Aquí encontrarás todo el material necesario para dominar nuestras herramientas.' }}
                         </p>
                         <hr class="mt-4">
-                        <!-- Saludo a usuario logueado: useAuthStore. user.name. Si no esta logueado mostrar "Inicia sesión" -->
-                        <div class="flex items-center justify-between mt-4">
-                            <div>
-                                <span class="text-xs text-muted-foreground font-semibold">Bienvenido</span>
-                                <span class="text-xs font-bold text-foreground">{{ authStore.user?.name }}</span>
-                            </div>
-                        </div>
                     </div>
                     <div class="mr-6" :class="platform.name.toLowerCase() == 'nextravel' ? 'w-64 p-3' : 'w-72'">
                         <img v-if="platform.image_url" :src="platform.image_url" :alt="platform.name" class="w-80 h-auto">

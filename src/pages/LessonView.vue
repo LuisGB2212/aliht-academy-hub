@@ -40,6 +40,9 @@ onMounted(async () => {
     }
     loading.value = false
     startLinkTimer()
+    // Sincronizar progreso: subir pendientes locales y bajar el estado remoto
+    store.pushLocalProgressToApi()
+    store.syncProgressFromApi()
 })
 
 onBeforeUnmount(() => clearLinkTimer())
@@ -141,6 +144,10 @@ function handleFinishModule() {
         showIncompleteAlert.value = true
         setTimeout(() => { showIncompleteAlert.value = false }, 4000)
         return
+    }
+    // Guardar finalización del módulo en la BD
+    if (currentModule.value?.id) {
+        store.completeModule(currentModule.value.id)
     }
     showCompletionModal.value = true
 }

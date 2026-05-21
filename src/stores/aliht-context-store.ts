@@ -19,6 +19,7 @@ import type {
     LessonPayload,
 } from '@/types/academy-type'
 import { apiRepository } from '@/utils/apiRepository'
+import { useAuthStore } from '@/stores/auth'
 
 const PROGRESS_KEY = 'aliht-lms-progress'
 
@@ -297,6 +298,7 @@ export const useLmsStore = defineStore('lms', () => {
 
     // ─── Progress ──────────────────────────────────────────────────────────────
     const progress = ref<UserProgress[]>(loadProgress())
+    const syncingProgress = ref(false)
 
     function loadProgress(): UserProgress[] {
         try {
@@ -321,24 +323,95 @@ export const useLmsStore = defineStore('lms', () => {
         saveProgress()
     }
 
+    // ─── Sync local item to API (fire-and-forget) ──────────────────────────────
+    async function syncToApi(lessonId: number, completed: boolean, lastViewedAt: string) {
+        try {
+            await apiRepository.post({
+                endpoint: '/academy/progress/sync',
+                body: { lessons: [{ lessonId, completed, lastViewedAt }] },
+            })
+        } catch (e) {
+            console.warn('[LmsStore] sync progress failed (will retry on next visit):', e)
+        }
+    }
+
+    // ─── Load remote progress and merge with localStorage ─────────────────────
+    async function syncProgressFromApi() {
+        if (syncingProgress.value) return
+        syncingProgress.value = true
+        try {
+            const res = await apiRepository.get<{
+                lessons: { lessonId: number; completed: boolean; lastViewedAt: string | null }[]
+                modules: { moduleId: number; completedAt: string }[]
+            }>({ endpoint: '/academy/progress/me' })
+
+            if (!res?.data?.lessons) return
+
+            // Merge: BD tiene prioridad si es más reciente
+            for (const remote of res.data.lessons) {
+                const local      = progress.value.find(p => p.lessonId === remote.lessonId)
+                const remoteTime = remote.lastViewedAt ? new Date(remote.lastViewedAt).getTime() : 0
+                const localTime  = local?.lastViewedAt  ? new Date(local.lastViewedAt).getTime()  : 0
+
+                if (!local || remoteTime > localTime) {
+                    upsertProgress({
+                        lessonId:     remote.lessonId,
+                        completed:    remote.completed,
+                        lastViewedAt: remote.lastViewedAt ?? undefined,
+                    })
+                }
+            }
+        } catch (e) {
+            console.warn('[LmsStore] Could not fetch remote progress:', e)
+        } finally {
+            syncingProgress.value = false
+        }
+    }
+
+    // ─── Push all local progress to API (útil en primer cargado) ──────────────
+    async function pushLocalProgressToApi() {
+        if (progress.value.length === 0) return
+        try {
+            await apiRepository.post({
+                endpoint: '/academy/progress/sync',
+                body: {
+                    lessons: progress.value.map(p => ({
+                        lessonId:     p.lessonId,
+                        completed:    p.completed,
+                        lastViewedAt: p.lastViewedAt ?? new Date().toISOString(),
+                    }))
+                },
+            })
+        } catch (e) {
+            console.warn('[LmsStore] Could not push local progress to API:', e)
+        }
+    }
+
     function toggleLessonComplete(lessonId: number) {
         const current = progress.value.find(p => p.lessonId === lessonId)
+        const now = new Date().toISOString()
+        const newCompleted = !current?.completed
 
-        upsertProgress({
-            lessonId,
-            completed: !current?.completed,
-            lastViewedAt: new Date().toISOString(),
-        })
+        upsertProgress({ lessonId, completed: newCompleted, lastViewedAt: now })
+        syncToApi(lessonId, newCompleted, now)
     }
 
     function markLessonViewed(lessonId: number) {
         const current = progress.value.find(p => p.lessonId === lessonId)
+        const now = new Date().toISOString()
 
-        upsertProgress({
-            lessonId,
-            completed: current?.completed ?? false,
-            lastViewedAt: new Date().toISOString(),
-        })
+        upsertProgress({ lessonId, completed: current?.completed ?? false, lastViewedAt: now })
+        // Registrar visita en API (fire-and-forget)
+        apiRepository.post({ endpoint: `/academy/progress/lesson/${lessonId}/view` }).catch(() => {})
+    }
+
+    // ─── Finalizar módulo ──────────────────────────────────────────────────────
+    async function completeModule(moduleId: number) {
+        try {
+            await apiRepository.post({ endpoint: `/academy/progress/module/${moduleId}/complete` })
+        } catch (e) {
+            console.warn('[LmsStore] completeModule API call failed:', e)
+        }
     }
 
     // ─── Getters ───────────────────────────────────────────────────────────────
@@ -406,6 +479,7 @@ export const useLmsStore = defineStore('lms', () => {
         progress,
         loading,
         isLoading,
+        syncingProgress,
 
         fetchAllData,
         fetchPlatforms,
@@ -428,6 +502,9 @@ export const useLmsStore = defineStore('lms', () => {
 
         toggleLessonComplete,
         markLessonViewed,
+        completeModule,
+        syncProgressFromApi,
+        pushLocalProgressToApi,
 
         getModuleLessons,
         getPlatformModules,
