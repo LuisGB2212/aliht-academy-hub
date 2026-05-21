@@ -1,6 +1,6 @@
 // ─── Content type ─────────────────────────────────────────────────────────────
 
-export type ContentType = 'video' | 'pdf' | 'link' | 'text'
+export type ContentType = 'video' | 'pdf' | 'image' | 'link' | 'text'
 
 /** Upload category sent to the pre-signed URL endpoint */
 export type UploadCategory = 'video' | 'pdf' | 'image'

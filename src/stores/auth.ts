@@ -1,9 +1,9 @@
 // stores/auth.ts
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { User } from '@/types/academy-type'
 import { config } from '@/types/lib-config-type'
-import { apiRepository, BASE_URL } from '@/utils/apiRepository'
+import { apiRepository } from '@/utils/apiRepository'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -16,25 +16,13 @@ export const useAuthStore = defineStore('auth', () => {
     try {
         if (config.agencyIdentifier === 1) {
             // La peticion va a aliht
-            const data = await apiRepository.get<User>({
+            const data = await apiRepository.get<{user: User}>({
                 endpoint: '/admin/user',
             })
-            console.log(data.success);
             loading.value = false;
-            user.value = data.data;
+            user.value = data.data.user;
             isAuthenticated.value = true;
         } else {
-            // let hostname  = location.hostname;
-            // let domain    = hostname;
-            // let subdomain = "";
-
-            // if (hostname.includes(".")) {
-            //     subdomain = hostname.split(".")[0];
-            //     domain    = hostname.split(".").slice(1).join(".");
-            // }
-
-            // console.log(subdomain);
-            // console.log(domain);
             const subdomain = localStorage.getItem('subdomain');
             if (subdomain) {
                 const tempUrl = config.apiBaseUrl;

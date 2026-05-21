@@ -23,7 +23,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="w-full mx-auto px-4 py-8 md:px-6">
+    <div class="w-full mx-auto px-4 py-8 md:px-16">
         <div class="mb-8">
             <div class="flex items-center justify-between">
                 <div>

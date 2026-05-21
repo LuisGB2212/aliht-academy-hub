@@ -79,6 +79,8 @@ export function useLessonForm() {
       if (isNew.value) {
         await store.createLesson(payload)
       } else {
+        // Eliminar del payload la edicion de visible
+        delete payload.visible;
         await store.updateLesson(editing.value.id!, payload)
       }
 

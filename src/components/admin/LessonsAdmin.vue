@@ -31,7 +31,6 @@ const {
     removePlatformContent,
     handleFileUpload,
     getPlatformName,
-    isUploadableType,
     getFileAccept,
 } = useLessonForm()
 
@@ -39,15 +38,13 @@ const {
 const contentTypes: { value: ContentType; label: string; icon: any; hint: string }[] = [
     { value: 'video', label: 'Video', icon: Video, hint: 'Sube un archivo de video (.mp4, .mov, .webm)' },
     { value: 'pdf', label: 'PDF', icon: FileText, hint: 'Sube un documento PDF' },
+    { value: 'image', label: 'Imagen', icon: ImageIcon, hint: 'Sube un archivo de imagen (.jpg, .jpeg, .png)' },
     { value: 'link', label: 'Enlace', icon: Link, hint: 'Ingresa la URL del recurso externo' },
     { value: 'text', label: 'Texto/Lectura', icon: Type, hint: 'Escribe el contenido directamente' },
 ]
 
 const getContentTypeIcon = (type: string) =>
     contentTypes.find(t => t.value === type)?.icon ?? Type
-
-const getContentTypeHint = (type: ContentType) =>
-    contentTypes.find(t => t.value === type)?.hint ?? ''
 
 // ─── File input handler ─────────────────────────────────────────────────────
 function onFileChange(event: Event, index: number, type: ContentType) {
@@ -343,10 +340,11 @@ onMounted(async () => {
                                                     class="w-4 h-4 text-muted-foreground group-hover/upload:text-primary transition-colors shrink-0" />
                                                 <span
                                                     class="text-xs text-muted-foreground group-hover/upload:text-primary transition-colors">
-                                                    {{ pc.content.value ? 'Reemplazar archivo' : `Seleccionar ${pc.type === 'video' ? 'video' : 'PDF'}` }}
+                                                    {{ pc.content.value ? 'Reemplazar archivo' : `Seleccionar
+                                                    ${pc.type === 'video' ? 'video' : pc.type === 'image' ? 'imagen' : 'PDF'}` }}
                                                 </span>
                                                 <span class="ml-auto text-[10px] text-muted-foreground/60">
-                                                    {{ pc.type === 'video' ? 'MP4, MOV, WEBM • máx. 500 MB' : 'PDF •máx. 50 MB' }}
+                                                    {{ pc.type === 'video' ? 'MP4, MOV, WEBM • máx. 500 MB' : pc.type === 'image' ? 'JPG, PNG, WEBM • máx. 10 MB' : 'PDF •máx. 10 MB' }}
                                                 </span>
                                             </template>
                                         </label>

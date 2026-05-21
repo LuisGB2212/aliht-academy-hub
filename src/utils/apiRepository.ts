@@ -64,6 +64,14 @@ export const apiRepository = {
                 throw new Error(data.message);
             }
 
+            if(!data.data) {
+                return {
+                    success: true,
+                    message: data.message ?? 'Operación exitosa',
+                    data: data as unknown as T
+                };
+            }
+
             return data;
         } catch (error: any) {
             throw error;

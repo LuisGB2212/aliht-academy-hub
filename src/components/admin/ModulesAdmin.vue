@@ -45,6 +45,8 @@ async function handleSave() {
         if (isNew.value) {
             await store.createModule(payload as any)
         } else {
+            // Eliminar del payload la edicion de visible
+            delete payload.visible;
             await store.updateModule(editing.value.id!, payload as any)
         }
         showModal.value = false

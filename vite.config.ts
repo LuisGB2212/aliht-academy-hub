@@ -18,5 +18,9 @@ export default defineConfig({
   server: {
     host: '::',
     port: 8080,
+    allowedHosts: [
+      'authority-alot-applicable-hygiene.trycloudflare.com',
+      '.trycloudflare.com',
+    ]
   },
 })
