@@ -337,11 +337,11 @@ export const useLmsStore = defineStore('lms', () => {
     }
 
     // ─── Sync local item to API (fire-and-forget) ──────────────────────────────
-    async function syncToApi(lessonId: number, completed: boolean, lastViewedAt: string) {
+    async function syncToApi(lessonId: number, moduleId: number, completed: boolean, lastViewedAt: string) {
         try {
             await apiRepository.post({
                 endpoint: '/academy/progress/sync',
-                body: { lessons: [{ lessonId, completed, lastViewedAt }], ...getPayloadBaseProgress() },
+                body: { module_id: moduleId, lessons: [{ lessonId, completed, lastViewedAt }], ...getPayloadBaseProgress() },
             })
         } catch (e) {
             console.warn('[LmsStore] sync progress failed (will retry on next visit):', e)
@@ -380,12 +380,13 @@ export const useLmsStore = defineStore('lms', () => {
     }
 
     // ─── Push all local progress to API (útil en primer cargado) ──────────────
-    async function pushLocalProgressToApi() {
-        if (progress.value.length === 0) return
+    async function pushLocalProgressToApi(moduleId?: number) {
+        if (progress.value.length === 0 && !moduleId) return
         try {
             await apiRepository.post({
                 endpoint: '/academy/progress/sync',
                 body: {
+                    module_id: moduleId,
                     lessons: progress.value.map(p => ({
                         lessonId:     p.lessonId,
                         completed:    p.completed,
@@ -404,7 +405,7 @@ export const useLmsStore = defineStore('lms', () => {
         const newCompleted = !current?.completed
 
         upsertProgress({ lessonId, moduleId, completed: newCompleted, lastViewedAt: now })
-        syncToApi(lessonId, newCompleted, now)
+        syncToApi(lessonId, moduleId!, newCompleted, now)
     }
 
     function markLessonViewed(lessonId: number, moduleId: number) {
@@ -413,7 +414,7 @@ export const useLmsStore = defineStore('lms', () => {
 
         upsertProgress({ lessonId, moduleId, completed: current?.completed ?? false, lastViewedAt: now })
         // Registrar visita en API (fire-and-forget)
-        apiRepository.post({ endpoint: `/academy/progress/lesson/${lessonId}/view`, body: getPayloadBaseProgress() }).catch(() => {})
+        apiRepository.post({ endpoint: `/academy/progress/lesson/${lessonId}/view`, body: {module_id: moduleId, ...getPayloadBaseProgress()} }).catch(() => {})
     }
 
     // ─── Finalizar módulo ──────────────────────────────────────────────────────

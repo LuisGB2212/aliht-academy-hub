@@ -31,21 +31,6 @@ let linkTimer: ReturnType<typeof setTimeout> | null = null
 const showCompletionModal = ref(false)
 const showIncompleteAlert = ref(false)   // aviso cuando faltan lecciones
 
-// ─── Load ─────────────────────────────────────────────────────────────────────
-onMounted(async () => {
-    loading.value = true
-    await store.fetchPlatforms()
-    if (platformId.value) {
-        await store.fetchPlatformContent(platformId.value)
-    }
-    loading.value = false
-    startLinkTimer()
-    // Sincronizar progreso: subir pendientes locales y bajar el estado remoto
-    store.pushLocalProgressToApi()
-    store.syncProgressFromApi()
-})
-
-onBeforeUnmount(() => clearLinkTimer())
 
 // ─── Derived state ─────────────────────────────────────────────────────────────
 const platform = computed(() => store.platforms.find(p => p.id === platformId.value))
@@ -111,6 +96,22 @@ function startLinkTimer() {
 function onPdfRead() {
     pdfRead.value = true
 }
+
+// ─── Load ─────────────────────────────────────────────────────────────────────
+onMounted(async () => {
+    loading.value = true
+    await store.fetchPlatforms()
+    if (platformId.value) {
+        await store.fetchPlatformContent(platformId.value)
+    }
+    loading.value = false
+    startLinkTimer()
+    // Sincronizar progreso: subir pendientes locales y bajar el estado remoto
+    store.pushLocalProgressToApi(currentModule.value?.id)
+    store.syncProgressFromApi()
+})
+
+onBeforeUnmount(() => clearLinkTimer())
 
 // ─── Reset on lesson change ───────────────────────────────────────────────────
 watch(lessonId, (id) => {
