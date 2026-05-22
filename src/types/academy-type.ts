@@ -109,3 +109,8 @@ export interface User {
     agency_id: number;
     agency_name: string;
 }
+
+export interface AcademyUserProgress {
+    lessons: { lessonId: number; completed: boolean; lastViewedAt: string | null }[]
+    modules: { moduleId: number; completedAt: string }[]
+}

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch, onMounted, onBeforeUnmount, ref, nextTick } from 'vue'
+import { computed, watch, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useRoute, RouterLink, useRouter } from 'vue-router'
 import { useLmsStore } from '@/stores/aliht-context-store'
 import { useAuthStore } from '@/stores/auth'

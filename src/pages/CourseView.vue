@@ -7,7 +7,6 @@ import {
     Link as LinkIcon, Type, ChevronDown, ArrowRight,
     Monitor
 } from 'lucide-vue-next'
-import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute();
 const store = useLmsStore();

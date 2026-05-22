@@ -17,6 +17,7 @@ import type {
     UserProgress,
     CourseProgress,
     LessonPayload,
+    AcademyUserProgress,
 } from '@/types/academy-type'
 import { apiRepository } from '@/utils/apiRepository'
 import { useAuthStore } from '@/stores/auth'
@@ -41,6 +42,18 @@ export const useLmsStore = defineStore('lms', () => {
 
     function shouldFetch<T>(data: T[], force?: boolean) {
         return force || data.length === 0
+    }
+
+    const getPayloadBaseProgress = (): Record<string, any> => {
+        const authStore = useAuthStore();
+
+        return {
+            user_id: authStore.user?.id,
+            user_name: authStore.user?.name,
+            user_email: authStore.user?.email,
+            agency_id: authStore.user?.agency_id,
+            agency_name: authStore.user?.agency_name
+        }
     }
 
     // ─── Generic API Handler ────────────────────────────────────────────────────
@@ -328,7 +341,7 @@ export const useLmsStore = defineStore('lms', () => {
         try {
             await apiRepository.post({
                 endpoint: '/academy/progress/sync',
-                body: { lessons: [{ lessonId, completed, lastViewedAt }] },
+                body: { lessons: [{ lessonId, completed, lastViewedAt }], ...getPayloadBaseProgress() },
             })
         } catch (e) {
             console.warn('[LmsStore] sync progress failed (will retry on next visit):', e)
@@ -340,10 +353,7 @@ export const useLmsStore = defineStore('lms', () => {
         if (syncingProgress.value) return
         syncingProgress.value = true
         try {
-            const res = await apiRepository.get<{
-                lessons: { lessonId: number; completed: boolean; lastViewedAt: string | null }[]
-                modules: { moduleId: number; completedAt: string }[]
-            }>({ endpoint: '/academy/progress/me' })
+            const res = await apiRepository.get<AcademyUserProgress>({ endpoint: '/academy/progress/me', params: getPayloadBaseProgress() })
 
             if (!res?.data?.lessons) return
 
@@ -379,7 +389,7 @@ export const useLmsStore = defineStore('lms', () => {
                         lessonId:     p.lessonId,
                         completed:    p.completed,
                         lastViewedAt: p.lastViewedAt ?? new Date().toISOString(),
-                    }))
+                    })), ...getPayloadBaseProgress()
                 },
             })
         } catch (e) {
@@ -402,13 +412,13 @@ export const useLmsStore = defineStore('lms', () => {
 
         upsertProgress({ lessonId, completed: current?.completed ?? false, lastViewedAt: now })
         // Registrar visita en API (fire-and-forget)
-        apiRepository.post({ endpoint: `/academy/progress/lesson/${lessonId}/view` }).catch(() => {})
+        apiRepository.post({ endpoint: `/academy/progress/lesson/${lessonId}/view`, body: getPayloadBaseProgress() }).catch(() => {})
     }
 
     // ─── Finalizar módulo ──────────────────────────────────────────────────────
     async function completeModule(moduleId: number) {
         try {
-            await apiRepository.post({ endpoint: `/academy/progress/module/${moduleId}/complete` })
+            await apiRepository.post({ endpoint: `/academy/progress/module/${moduleId}/complete`, body: getPayloadBaseProgress() })
         } catch (e) {
             console.warn('[LmsStore] completeModule API call failed:', e)
         }

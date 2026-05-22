@@ -1,6 +1,6 @@
 // stores/auth.ts
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import type { User } from '@/types/academy-type'
 import { config } from '@/types/lib-config-type'
 import { apiRepository } from '@/utils/apiRepository'
