@@ -28,11 +28,11 @@ export const useAuthStore = defineStore('auth', () => {
                 const tempUrl = config.apiBaseUrl;
                 config.apiBaseUrl = "https://agencyapi.aliht.com.mx/api";
                 // La peticion va a la agencia
-                const data = await apiRepository.get<User>({
+                const data = await apiRepository.get<{user: User}>({
                     endpoint: `/${subdomain}/user`,
                     agencyIdentifier: subdomain
                 });
-                user.value = data.data;
+                user.value = data.data.user;
                 loading.value = false;
                 isAuthenticated.value = true;
                 config.apiBaseUrl = tempUrl;
