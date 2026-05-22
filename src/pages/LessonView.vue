@@ -16,20 +16,20 @@ const store = useLmsStore()
 const authStore = useAuthStore()
 
 const platformId = computed(() => parseInt(route.params.categoryId as string))
-const lessonId   = computed(() => parseInt(route.params.lessonId  as string))
-const loading    = ref(false)
+const lessonId = computed(() => parseInt(route.params.lessonId as string))
+const loading = ref(false)
 
 // ─── Completion flags ──────────────────────────────────────────────────────────
-const videoEnded     = ref(false)
-const pdfRead        = ref(false)  // emitido por PdfViewer cuando se llega a última pág.
+const videoEnded = ref(false)
+const pdfRead = ref(false)  // emitido por PdfViewer cuando se llega a última pág.
 // Link: se habilita después de N segundos de tener el recurso cargado
-const linkTimerDone  = ref(false)
-const LINK_DELAY_MS  = 10000  // 10 s mínimos de visualización del enlace
+const linkTimerDone = ref(false)
+const LINK_DELAY_MS = 10000  // 10 s mínimos de visualización del enlace
 let linkTimer: ReturnType<typeof setTimeout> | null = null
 
 // ─── Modals ────────────────────────────────────────────────────────────────────
-const showCompletionModal  = ref(false)
-const showIncompleteAlert  = ref(false)   // aviso cuando faltan lecciones
+const showCompletionModal = ref(false)
+const showIncompleteAlert = ref(false)   // aviso cuando faltan lecciones
 
 // ─── Load ─────────────────────────────────────────────────────────────────────
 onMounted(async () => {
@@ -48,9 +48,9 @@ onMounted(async () => {
 onBeforeUnmount(() => clearLinkTimer())
 
 // ─── Derived state ─────────────────────────────────────────────────────────────
-const platform    = computed(() => store.platforms.find(p => p.id === platformId.value))
-const lesson      = computed(() => store.lessons.find(l => l.id === lessonId.value))
-const status      = computed(() => store.getLessonStatus(lessonId.value))
+const platform = computed(() => store.platforms.find(p => p.id === platformId.value))
+const lesson = computed(() => store.lessons.find(l => l.id === lessonId.value))
+const status = computed(() => store.getLessonStatus(lessonId.value))
 
 const platformContent = computed(() => {
     if (!lesson.value || !platformId.value) return null
@@ -86,7 +86,7 @@ const allModuleLessonsCompleted = computed(() =>
 const canComplete = computed(() => {
     const type = platformContent.value?.type
     if (type === 'video') return videoEnded.value
-    if (type === 'pdf')  return pdfRead.value
+    if (type === 'pdf') return pdfRead.value
     if (type === 'link') return linkTimerDone.value
     // image / text: always available
     return true
@@ -114,9 +114,9 @@ function onPdfRead() {
 
 // ─── Reset on lesson change ───────────────────────────────────────────────────
 watch(lessonId, (id) => {
-    if (id) store.markLessonViewed(id)
-    videoEnded.value    = false
-    pdfRead.value       = false
+    if (id && currentModule.value?.id) store.markLessonViewed(id, currentModule.value.id)
+    videoEnded.value = false
+    pdfRead.value = false
     linkTimerDone.value = false
     startLinkTimer()
 }, { immediate: true })
@@ -181,7 +181,8 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
 
                     <!-- Module name as header -->
                     <div class="mb-4">
-                        <p class="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 mb-1">
+                        <p
+                            class="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 mb-1">
                             <Monitor class="w-3.5 h-3.5" />
                             Funcionalidad
                         </p>
@@ -194,12 +195,9 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
 
                     <!-- Lesson list (only this module) -->
                     <div class="space-y-0.5 max-h-[65vh] overflow-auto pr-1">
-                        <RouterLink
-                            v-for="l in moduleLessons"
-                            :key="l.id"
+                        <RouterLink v-for="l in moduleLessons" :key="l.id"
                             :to="{ name: 'lesson', params: { categoryId: platformId, lessonId: l.id } }"
-                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all border"
-                            :class="l.id === lessonId
+                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all border" :class="l.id === lessonId
                                 ? 'bg-primary/10 text-primary border-primary/20 shadow-sm'
                                 : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground'">
                             <div class="shrink-0">
@@ -218,18 +216,16 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
                         <div class="flex justify-between text-[10px] text-muted-foreground mb-1.5">
                             <span>Progreso</span>
                             <span>
-                                {{ moduleLessons.filter(l => store.getLessonStatus(l.id) === 'completed').length }}
+                                {{moduleLessons.filter(l => store.getLessonStatus(l.id) === 'completed').length}}
                                 / {{ moduleLessons.length }}
                             </span>
                         </div>
                         <div class="w-full h-1.5 bg-muted/40 rounded-full overflow-hidden">
-                            <div
-                                class="h-full gradient-bg rounded-full transition-all duration-500"
-                                :style="{
-                                    width: moduleLessons.length
-                                        ? `${(moduleLessons.filter(l => store.getLessonStatus(l.id) === 'completed').length / moduleLessons.length) * 100}%`
-                                        : '0%'
-                                }" />
+                            <div class="h-full gradient-bg rounded-full transition-all duration-500" :style="{
+                                width: moduleLessons.length
+                                    ? `${(moduleLessons.filter(l => store.getLessonStatus(l.id) === 'completed').length / moduleLessons.length) * 100}%`
+                                    : '0%'
+                            }" />
                         </div>
                     </div>
                 </div>
@@ -255,19 +251,14 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
                         <!-- ═══ VIDEO ══════════════════════════════════════════════ -->
                         <div v-if="platformContent.type === 'video' && getContent(platformContent)"
                             class="aspect-video bg-black">
-                            <video
-                                :src="getContent(platformContent)"
-                                class="w-full h-full"
-                                controls
+                            <video :src="getContent(platformContent)" class="w-full h-full" controls
                                 @ended="onVideoEnded" />
                         </div>
 
                         <!-- ═══ PDF ════════════════════════════════════════════════ -->
                         <!-- Renderizado con pdfjs-dist; emite @read al llegar a la última página -->
                         <div v-else-if="platformContent.type === 'pdf' && getContent(platformContent)">
-                            <PdfViewer
-                                :src="getContent(platformContent)"
-                                @read="onPdfRead" />
+                            <PdfViewer :src="getContent(platformContent)" @read="onPdfRead" />
                             <!-- <div class="flex items-center px-5 py-3 border-t border-border/40 bg-muted/5">
                                 <a :href="getContent(platformContent)" target="_blank" rel="noopener noreferrer"
                                     class="inline-flex items-center gap-2 px-4 py-2 rounded-xl gradient-bg text-primary-foreground text-sm font-semibold shadow-md hover:scale-[1.03] transition">
@@ -280,7 +271,8 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
                         <!-- ═══ IMAGE ══════════════════════════════════════════════ -->
                         <div v-else-if="platformContent.type === 'image' && getContent(platformContent)"
                             class="bg-black flex items-center justify-center" style="min-height: 300px;">
-                            <img :src="getContent(platformContent)" class="max-w-full max-h-[520px] object-contain" alt="" />
+                            <img :src="getContent(platformContent)" class="max-w-full max-h-[520px] object-contain"
+                                alt="" />
                         </div>
 
                         <!-- ═══ TEXT ═══════════════════════════════════════════════ -->
@@ -301,11 +293,8 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
                                     </p>
                                 </div>
                             </div>
-                            <iframe
-                                :src="getContent(platformContent)"
-                                class="w-full border-0"
-                                style="height: 480px; display: block;"
-                                frameborder="0" />
+                            <iframe :src="getContent(platformContent)" class="w-full border-0"
+                                style="height: 480px; display: block;" frameborder="0" />
                             <div class="flex items-center justify-between px-5 py-3">
                                 <a :href="getContent(platformContent)" target="_blank" rel="noopener noreferrer"
                                     class="inline-flex items-center gap-2 px-4 py-2 rounded-xl gradient-bg text-primary-foreground text-sm font-semibold shadow-md hover:scale-[1.03] transition">
@@ -342,7 +331,8 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
 
                             <div class="flex-1">
                                 <div class="flex items-center gap-3 mb-2 flex-wrap">
-                                    <span class="px-2 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase">
+                                    <span
+                                        class="px-2 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase">
                                         {{ platformContent?.type || lesson.type_content }}
                                     </span>
                                     <h1 class="text-xl md:text-2xl font-bold text-foreground tracking-tight">
@@ -356,10 +346,8 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
 
                             <!-- Completion button -->
                             <Transition name="fade-up" mode="out-in">
-                                <button
-                                    v-if="canComplete || status === 'completed'"
-                                    key="active"
-                                    @click="store.toggleLessonComplete(lesson.id)"
+                                <button v-if="canComplete || status === 'completed'" key="active"
+                                    @click="store.toggleLessonComplete(lesson.id, currentModule?.id)"
                                     class="shrink-0 flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all border"
                                     :class="status === 'completed'
                                         ? 'bg-success/10 text-success border-success/20 hover:bg-success/20'
@@ -398,8 +386,7 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
                     </RouterLink>
 
                     <!-- Last lesson of module → Finalizar Módulo -->
-                    <button v-else
-                        @click="handleFinishModule"
+                    <button v-else @click="handleFinishModule"
                         class="flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-semibold shadow-md hover:scale-[1.03] transition"
                         :class="allModuleLessonsCompleted
                             ? 'gradient-bg text-primary-foreground'
@@ -435,8 +422,7 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
     <!-- ═══ Module Completion Modal ════════════════════════════════════════════ -->
     <Teleport to="body">
         <Transition name="modal">
-            <div v-if="showCompletionModal"
-                class="fixed inset-0 z-50 flex items-center justify-center p-4"
+            <div v-if="showCompletionModal" class="fixed inset-0 z-50 flex items-center justify-center p-4"
                 @click.self="closeCompletionModal">
 
                 <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -456,7 +442,8 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
                                 </div>
                                 <div class="flex items-center justify-center gap-2 mb-1">
                                     <PartyPopper class="w-5 h-5 text-white/80" />
-                                    <span class="text-white/80 text-sm font-medium tracking-wide uppercase">¡Felicidades!</span>
+                                    <span
+                                        class="text-white/80 text-sm font-medium tracking-wide uppercase">¡Felicidades!</span>
                                     <PartyPopper class="w-5 h-5 text-white/80" />
                                 </div>
                                 <h2 class="text-2xl font-bold text-white leading-tight">
@@ -467,12 +454,13 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
 
                         <!-- Body -->
                         <div class="p-8 text-center">
-                            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-5 border border-primary/20">
+                            <div
+                                class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-5 border border-primary/20">
                                 <CheckCircle2 class="w-3.5 h-3.5" />
                                 Etapa Finalizada
                             </div>
 
-                            <p class="text-muted-foreground text-sm mb-1">Este logro pertenece a</p>
+                            <!-- <p class="text-muted-foreground text-sm mb-1">Este logro pertenece a</p> -->
                             <p class="text-2xl font-bold text-foreground mb-4">{{ userName }}</p>
 
                             <p class="text-muted-foreground text-sm leading-relaxed mb-2">Has completado la etapa</p>
@@ -480,8 +468,10 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
 
                             <div class="bg-muted/30 rounded-2xl p-4 mb-6 border border-border/40">
                                 <p class="text-sm text-muted-foreground leading-relaxed italic">
-                                    "El aprendizaje no termina aquí. Cada habilidad que adquieres abre una nueva puerta
-                                    de posibilidades. ¡Sigue adelante, <strong class="text-foreground not-italic">{{ userName }}</strong>!"
+                                    El aprendizaje no termina aquí. Cada habilidad que adquieres abre una nueva puerta de posibilidades.
+                                </p>
+                                <p class="text-sm text-muted-foreground leading-relaxed italic">
+                                    ¡Sigue adelante, <strong class="text-foreground not-italic">{{ userName }}</strong>!
                                 </p>
                             </div>
 
@@ -489,8 +479,7 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
                                 <Star v-for="i in 5" :key="i" class="w-5 h-5 text-yellow-400 fill-yellow-400" />
                             </div>
 
-                            <button
-                                @click="closeCompletionModal"
+                            <button @click="closeCompletionModal"
                                 class="w-full gradient-bg text-primary-foreground font-semibold py-3 px-6 rounded-xl shadow-md hover:scale-[1.02] transition-transform text-sm">
                                 Volver al curso
                             </button>
@@ -507,6 +496,7 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
 .fade-up-leave-active {
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
+
 .fade-up-enter-from,
 .fade-up-leave-to {
     opacity: 0;
@@ -517,17 +507,21 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
 .modal-leave-active {
     transition: opacity 0.25s ease;
 }
+
 .modal-enter-from,
 .modal-leave-to {
     opacity: 0;
 }
+
 .modal-enter-active .relative,
 .modal-leave-active .relative {
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
 .modal-enter-from .relative {
     transform: scale(0.85) translateY(20px);
 }
+
 .modal-leave-to .relative {
     transform: scale(0.9) translateY(10px);
 }

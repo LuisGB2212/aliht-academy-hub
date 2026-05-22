@@ -2,19 +2,21 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useLmsStore } from '@/stores/aliht-context-store'
-import { BookOpen, Layers, FileText, ArrowLeft } from 'lucide-vue-next'
+import { BookOpen, Layers, FileText, ArrowLeft, Users } from 'lucide-vue-next'
 import PlatformsAdmin from '@/components/admin/PlatformsAdmin.vue'
 import ModulesAdmin from '@/components/admin/ModulesAdmin.vue'
 import LessonsAdmin from '@/components/admin/LessonsAdmin.vue'
+import UserProgressAdmin from '@/components/admin/UserProgressAdmin.vue'
 
 const store = useLmsStore()
-type AdminTab = 'plataformas' | 'funcionalidades' | 'tutoriales'
+type AdminTab = 'plataformas' | 'funcionalidades' | 'tutoriales' | 'progreso'
 const tabSelected = ref<AdminTab>('plataformas')
 
 const tabs = [
     { key: 'plataformas' as AdminTab, label: 'Plataformas', icon: BookOpen, count: () => store.platforms.length },
     { key: 'funcionalidades' as AdminTab, label: 'Funcionalidades', icon: Layers, count: () => store.modules.length },
     { key: 'tutoriales' as AdminTab, label: 'Tutoriales', icon: FileText, count: () => store.lessons.length },
+    { key: 'progreso' as AdminTab, label: 'Progreso de Usuarios', icon: Users, count: () => 0 },
 ]
 
 onMounted(async () => {
@@ -50,7 +52,7 @@ onMounted(async () => {
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'" type="button">
                 <component :is="tab.icon" class="w-4 h-4" />
                 {{ tab.label }}
-                <span class="text-xs px-1.5 py-0.5 rounded-full" :class="tabSelected === tab.key ? 'bg-white/20' : 'bg-muted'">{{
+                <span v-if="tab.key !== 'progreso'" class="text-xs px-1.5 py-0.5 rounded-full" :class="tabSelected === tab.key ? 'bg-white/20' : 'bg-muted'">{{
                     tab.count() }}</span>
             </button>
         </div>
@@ -58,5 +60,6 @@ onMounted(async () => {
         <PlatformsAdmin v-if="tabSelected === 'plataformas'" />
         <ModulesAdmin v-if="tabSelected === 'funcionalidades'" />
         <LessonsAdmin v-if="tabSelected === 'tutoriales'" />
+        <UserProgressAdmin v-if="tabSelected === 'progreso'" />
     </div>
 </template>

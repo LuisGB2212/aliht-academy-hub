@@ -52,6 +52,10 @@ export interface Module {
     platforms?: Platform[]   // populated on fetch (display)
     platform_ids?: number[]  // used when saving
     lessons?: Lesson[]       // nested content tree
+    pivot?: {
+        academy_lesson_id: number
+        academy_module_id: number
+    }
     created_at?: string
     updated_at?: string
 }
@@ -85,6 +89,7 @@ export interface Lesson {
 export interface UserProgress {
     lessonId: number
     completed: boolean
+    moduleId?: number
     lastViewedAt?: string
 }
 
@@ -108,9 +113,66 @@ export interface User {
     is_aliht: boolean;
     agency_id: number;
     agency_name: string;
+    view_stats?: boolean;
 }
 
 export interface AcademyUserProgress {
-    lessons: { lessonId: number; completed: boolean; lastViewedAt: string | null }[]
+    lessons: { lessonId: number; moduleId: number; completed: boolean; lastViewedAt: string | null }[]
     modules: { moduleId: number; completedAt: string }[]
+}
+
+export interface AcademyStatistics {
+    total_modules: number;
+    total_lessons: number;
+    total_completed_modules: number;
+    total_completed_lessons: number;
+    completion_percentage: number;
+    users_with_progress: number;
+    users_with_zero_progress: number;
+}
+
+export interface TopUserLesson {
+    lesson_id: number;
+    lesson_title: string;
+    module_id: number;
+}
+
+export interface TopUserStat {
+    user_id: number;
+    user_name: string;
+    user_email: string;
+    agency_id: number;
+    agency_name: string;
+    total_completed: number;
+    module_id: number;
+    module_name?: string;
+    module_lessons_total?: number;
+    lessons: TopUserLesson[];
+}
+
+export interface ModuleCompletion {
+    module: string;
+    module_id: number;
+    total_users: number;
+    total_agencies: number;
+}
+
+export interface TopLessonStat {
+    lesson: string;
+    lesson_id: number;
+    total_completed: number;
+}
+
+export interface AgencyStat {
+    agency_id: number;
+    agency_name: string;
+    users_with_progress: number;
+    total_completions: number;
+}
+
+export interface AcademyPlatformStatistics {
+    top_users: TopUserStat[];
+    module_completions: ModuleCompletion[];
+    top_lessons: TopLessonStat[];
+    by_agency: AgencyStat[];
 }

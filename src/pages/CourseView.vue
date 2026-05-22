@@ -2,14 +2,16 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { useLmsStore } from '@/stores/aliht-context-store'
+import { useAuthStore } from '@/stores/auth'
 import {
     CheckCircle2, Circle, PlayCircle, FileText,
     Link as LinkIcon, Type, ChevronDown, ArrowRight,
-    Monitor
+    Monitor, BarChart3
 } from 'lucide-vue-next'
 
 const route = useRoute();
 const store = useLmsStore();
+const authStore = useAuthStore();
 
 const platformId = computed(() => parseInt(route.params.categoryId as string))
 const platform = computed(() => store.platforms.find(p => p.id === platformId.value))
@@ -70,6 +72,11 @@ const contentIcons: Record<string, any> = {
                             {{ platform.description ||
                             'Bienvenido al centro de capacitación de ' + platform.name + '. Aquí encontrarás todo el material necesario para dominar nuestras herramientas.' }}
                         </p>
+                        <div v-if="authStore.user?.agency_id && authStore.user?.view_stats" class="mb-4">
+                            <RouterLink to="/agency-stats" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all text-primary bg-primary/10 hover:bg-primary/20">
+                                <BarChart3 class="w-4 h-4" /> Ver Estadísticas de Agencia
+                            </RouterLink>
+                        </div>
                         <hr class="mt-4">
                     </div>
                     <div class="mr-6" :class="platform.name.toLowerCase() == 'nextravel' ? 'w-64 p-3' : 'w-72'">

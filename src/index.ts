@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard.vue';
 import CourseView from './pages/CourseView.vue';
 import LessonView from './pages/LessonView.vue';
 import AdminPanel from './pages/AdminPanel.vue';
+import AgencyStats from './pages/AgencyStats.vue';
 
 // Export components with specific requested names
 export const AlihtAcademyUserHub = Dashboard;
@@ -17,7 +18,8 @@ export {
     Dashboard,
     CourseView,
     LessonView,
-    AdminPanel
+    AdminPanel,
+    AgencyStats
 };
 
 // Export types, config setter, and router factory

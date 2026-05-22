@@ -366,6 +366,7 @@ export const useLmsStore = defineStore('lms', () => {
                 if (!local || remoteTime > localTime) {
                     upsertProgress({
                         lessonId:     remote.lessonId,
+                        moduleId:     remote.moduleId,
                         completed:    remote.completed,
                         lastViewedAt: remote.lastViewedAt ?? undefined,
                     })
@@ -397,20 +398,20 @@ export const useLmsStore = defineStore('lms', () => {
         }
     }
 
-    function toggleLessonComplete(lessonId: number) {
+    function toggleLessonComplete(lessonId: number, moduleId?: number) {
         const current = progress.value.find(p => p.lessonId === lessonId)
         const now = new Date().toISOString()
         const newCompleted = !current?.completed
 
-        upsertProgress({ lessonId, completed: newCompleted, lastViewedAt: now })
+        upsertProgress({ lessonId, moduleId, completed: newCompleted, lastViewedAt: now })
         syncToApi(lessonId, newCompleted, now)
     }
 
-    function markLessonViewed(lessonId: number) {
+    function markLessonViewed(lessonId: number, moduleId: number) {
         const current = progress.value.find(p => p.lessonId === lessonId)
         const now = new Date().toISOString()
 
-        upsertProgress({ lessonId, completed: current?.completed ?? false, lastViewedAt: now })
+        upsertProgress({ lessonId, moduleId, completed: current?.completed ?? false, lastViewedAt: now })
         // Registrar visita en API (fire-and-forget)
         apiRepository.post({ endpoint: `/academy/progress/lesson/${lessonId}/view`, body: getPayloadBaseProgress() }).catch(() => {})
     }
