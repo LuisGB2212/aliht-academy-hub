@@ -38,7 +38,11 @@ export const apiRepository = {
             },
         };
 
-        if (body) config.body = JSON.stringify(body);
+        if (body) {
+            config.body = JSON.stringify(body);
+            console.log('config', config);
+            return { success: true, data: {} as T };
+        }
 
         try {
             let url = `${BASE_URL()}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
