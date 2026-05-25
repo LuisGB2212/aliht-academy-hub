@@ -227,5 +227,6 @@ export interface EvaluationResultResponse {
     user_id: number
     user_name: string
     user_email: string
-    answers?: Record<string, string[]>
+    answers?: Record<string, string[]>,
+    evaluation?: ModuleEvaluation
 }
