@@ -133,9 +133,6 @@ export async function uploadAcademyFile(
 
     // Step 1: Get pre-signed URL
     const { upload_url, public_url, key } = await getPresignedUrl(file, category)
-    console.log('upload_url', upload_url)
-    console.log('public_url', public_url)
-    console.log('key', key)
 
     // Step 2: Upload directly to S3
     await uploadFileToS3(file, upload_url.url, onProgress)

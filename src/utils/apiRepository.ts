@@ -40,8 +40,6 @@ export const apiRepository = {
 
         if (body) {
             config.body = JSON.stringify(body);
-            console.log('config', config);
-            return { success: true, data: {} as T };
         }
 
         try {
@@ -67,8 +65,8 @@ export const apiRepository = {
             if (!response.ok || (data && data.success === false)) {
                 throw new Error(data.message);
             }
-
-            if(!data.data) {
+            
+            if(typeof data.data === 'undefined') {
                 return {
                     success: true,
                     message: data.message ?? 'Operación exitosa',

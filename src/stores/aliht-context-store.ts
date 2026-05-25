@@ -18,6 +18,8 @@ import type {
     CourseProgress,
     LessonPayload,
     AcademyUserProgress,
+    ModuleEvaluation,
+    EvaluationResult,
 } from '@/types/academy-type'
 import { apiRepository } from '@/utils/apiRepository'
 import { useAuthStore } from '@/stores/auth'
@@ -426,6 +428,83 @@ export const useLmsStore = defineStore('lms', () => {
         }
     }
 
+    // ─── Evaluaciones ──────────────────────────────────────────────────────────
+
+    async function fetchModuleEvaluation(moduleId: number): Promise<ModuleEvaluation | null> {
+        try {
+            const res = await apiRepository.get<ModuleEvaluation | null>({
+                endpoint: `/academy/evaluations/module/${moduleId}`,
+                params: getPayloadBaseProgress(),
+            })
+            return res?.data ?? null
+        } catch {
+            return null
+        }
+    }
+
+    async function fetchModuleEvaluationAdmin(moduleId: number): Promise<ModuleEvaluation | null> {
+        try {
+            const res = await apiRepository.get<ModuleEvaluation | null>({
+                endpoint: `/academy/evaluations/module/${moduleId}/admin`,
+            })
+            return res?.data ?? null
+        } catch {
+            return null
+        }
+    }
+
+    async function createEvaluation(data: Partial<ModuleEvaluation>): Promise<ModuleEvaluation | undefined> {
+        return handleRequest<ModuleEvaluation>(
+            'createEvaluation',
+            () => apiRepository.post({ endpoint: '/academy/evaluations', body: data }),
+            undefined,
+            true
+        )
+    }
+
+    async function updateEvaluation(id: number, data: Partial<ModuleEvaluation>): Promise<ModuleEvaluation | undefined> {
+        return handleRequest<ModuleEvaluation>(
+            'updateEvaluation',
+            () => apiRepository.put({ endpoint: `/academy/evaluations/${id}`, body: data }),
+            undefined,
+            true
+        )
+    }
+
+    async function deleteEvaluation(id: number): Promise<void> {
+        await handleRequest<void>(
+            'deleteEvaluation',
+            () => apiRepository.delete({ endpoint: `/academy/evaluations/${id}` }),
+            undefined,
+            true
+        )
+    }
+
+    async function submitEvaluation(evalId: number, answers: Record<string, string[]>): Promise<EvaluationResult | null> {
+        try {
+            const res = await apiRepository.post<EvaluationResult>({
+                endpoint: `/academy/evaluations/${evalId}/submit`,
+                body: { answers, ...getPayloadBaseProgress() },
+            })
+            return res?.data ?? null
+        } catch (e) {
+            console.warn('[LmsStore] submitEvaluation failed:', e)
+            return null
+        }
+    }
+
+    async function getMyEvaluationResult(evalId: number): Promise<EvaluationResult | null> {
+        try {
+            const res = await apiRepository.get<EvaluationResult | null>({
+                endpoint: `/academy/evaluations/${evalId}/my-result`,
+                params: getPayloadBaseProgress(),
+            })
+            return res?.data ?? null
+        } catch {
+            return null
+        }
+    }
+
     // ─── Getters ───────────────────────────────────────────────────────────────
     const getModuleLessons = (moduleId: number): Lesson[] =>
         lessons.value
@@ -517,6 +596,14 @@ export const useLmsStore = defineStore('lms', () => {
         completeModule,
         syncProgressFromApi,
         pushLocalProgressToApi,
+
+        fetchModuleEvaluation,
+        fetchModuleEvaluationAdmin,
+        createEvaluation,
+        updateEvaluation,
+        deleteEvaluation,
+        submitEvaluation,
+        getMyEvaluationResult,
 
         getModuleLessons,
         getPlatformModules,

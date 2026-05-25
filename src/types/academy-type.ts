@@ -176,3 +176,38 @@ export interface AcademyPlatformStatistics {
     top_lessons: TopLessonStat[];
     by_agency: AgencyStat[];
 }
+
+// ─── Evaluations ──────────────────────────────────────────────────────────────
+
+export type EvaluationQuestionType = 'single_choice' | 'multiple_choice' | 'true_false'
+
+export interface EvaluationOption {
+    id: string
+    text: string
+    correct?: boolean // solo presente en vista admin
+}
+
+export interface EvaluationQuestion {
+    id: string
+    question: string
+    type: EvaluationQuestionType
+    options: EvaluationOption[]
+}
+
+export interface ModuleEvaluation {
+    id: number
+    module_id: number
+    title: string
+    description?: string
+    practice_exercise?: string
+    passing_score: number
+    questions: EvaluationQuestion[]
+    visible?: boolean
+}
+
+export interface EvaluationResult {
+    score: number
+    passed: boolean
+    passing_score: number
+    completed_at: string
+}

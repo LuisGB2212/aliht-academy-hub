@@ -5,10 +5,12 @@ import { useLmsStore } from '@/stores/aliht-context-store'
 import { useAuthStore } from '@/stores/auth'
 import Breadcrumbs from '@/components/Breadcrumbs.vue'
 import PdfViewer from '@/components/PdfViewer.vue'
+import EvaluationModal from '@/components/EvaluationModal.vue'
 import {
     CheckCircle2, ArrowLeft, ArrowRight, ExternalLink, PlayCircle,
     Monitor, Globe, Trophy, Star, PartyPopper, AlertCircle
 } from 'lucide-vue-next'
+import type { ModuleEvaluation, EvaluationResult } from '@/types/academy-type'
 
 const route = useRoute()
 const router = useRouter()
@@ -30,6 +32,8 @@ let linkTimer: ReturnType<typeof setTimeout> | null = null
 // ─── Modals ────────────────────────────────────────────────────────────────────
 const showCompletionModal = ref(false)
 const showIncompleteAlert = ref(false)   // aviso cuando faltan lecciones
+const showEvaluationModal = ref(false)
+const currentEvaluation = ref<ModuleEvaluation | null>(null)
 
 
 // ─── Derived state ─────────────────────────────────────────────────────────────
@@ -140,17 +144,51 @@ function onVideoEnded() {
 const firstModule = computed(() => currentModule.value)
 
 // ─── "Finalizar módulo" button handler ───────────────────────────────────────
-function handleFinishModule() {
+async function handleFinishModule() {
     if (!allModuleLessonsCompleted.value) {
         showIncompleteAlert.value = true
         setTimeout(() => { showIncompleteAlert.value = false }, 4000)
         return
     }
-    // Guardar finalización del módulo en la BD
+
+    if (!currentModule.value?.id) {
+        showCompletionModal.value = true
+        return
+    }
+
+    // Verificar si el módulo tiene evaluación activa
+    const evaluation = await store.fetchModuleEvaluation(currentModule.value.id)
+    if (evaluation && evaluation.questions.length > 0) {
+        currentEvaluation.value = evaluation
+        showEvaluationModal.value = true
+    } else {
+        // Sin evaluación: completar directo
+        store.completeModule(currentModule.value.id)
+        showCompletionModal.value = true
+    }
+}
+
+function onEvaluationPassed(_result: EvaluationResult) {
+    showEvaluationModal.value = false
+    currentEvaluation.value = null
     if (currentModule.value?.id) {
         store.completeModule(currentModule.value.id)
     }
     showCompletionModal.value = true
+}
+
+function onEvaluationSkip() {
+    showEvaluationModal.value = false
+    currentEvaluation.value = null
+    if (currentModule.value?.id) {
+        store.completeModule(currentModule.value.id)
+    }
+    showCompletionModal.value = true
+}
+
+function onEvaluationClose() {
+    showEvaluationModal.value = false
+    currentEvaluation.value = null
 }
 
 function closeCompletionModal() {
@@ -419,6 +457,16 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
             Volver
         </RouterLink>
     </div>
+
+    <!-- ═══ Evaluation Modal ═════════════════════════════════════════════════════ -->
+    <EvaluationModal
+        v-if="showEvaluationModal && currentEvaluation"
+        :evaluation="currentEvaluation"
+        :module-name="currentModule?.name ?? ''"
+        @passed="onEvaluationPassed"
+        @skip="onEvaluationSkip"
+        @close="onEvaluationClose"
+    />
 
     <!-- ═══ Module Completion Modal ════════════════════════════════════════════ -->
     <Teleport to="body">
