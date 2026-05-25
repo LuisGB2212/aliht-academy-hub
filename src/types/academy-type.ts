@@ -145,9 +145,15 @@ export interface TopUserStat {
     agency_name: string;
     total_completed: number;
     module_id: number;
+    // actual_module_id?: number;
     module_name?: string;
     module_lessons_total?: number;
     lessons: TopUserLesson[];
+    has_evaluation?: boolean;
+    evaluation_id?: number | null;
+    has_evaluation_result?: boolean;
+    evaluation_score?: number | null;
+    evaluation_passed?: boolean | null;
 }
 
 export interface ModuleCompletion {
@@ -210,4 +216,16 @@ export interface EvaluationResult {
     passed: boolean
     passing_score: number
     completed_at: string
+}
+
+export interface EvaluationResultResponse {
+    agency_id: number
+    agency_name?: string
+    completed_at: string
+    passed: boolean
+    score: number
+    user_id: number
+    user_name: string
+    user_email: string
+    answers?: Record<string, string[]>
 }

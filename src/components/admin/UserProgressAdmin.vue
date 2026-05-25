@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { apiRepository } from '@/utils/apiRepository'
-import { Loader2, Users, Trophy, BookOpen, Layers, Search, RefreshCw } from 'lucide-vue-next'
-import { AcademyPlatformStatistics, Lesson, Module, TopUserLesson, TopUserStat } from '@/types/academy-type'
-import { useLmsStore } from '@/stores/aliht-context-store'
-
-const store = useLmsStore()
+import { Loader2, Users, Trophy, BookOpen, Layers, Search, RefreshCw, FileText, CheckCircle2, XCircle, X } from 'lucide-vue-next'
+import { AcademyPlatformStatistics, TopUserStat } from '@/types/academy-type'
 
 const stats = ref<AcademyPlatformStatistics | null>(null)
 const loading = ref(true)
@@ -13,6 +10,38 @@ const selectedAgencyId = ref<string>('')
 const searchQuery = ref('')
 const currentSubTab = ref<'agencies' | 'users' | 'modules' | 'lessons'>('users')
 const allAgencies = ref<any[]>([])
+
+// ─── Evaluation results modal ──────────────────────────────────────────────
+const showEvalModal = ref(false)
+const evalModalLoading = ref(false)
+const evalModalUser = ref<TopUserStat | null>(null)
+const evalModalResults = ref<any[]>([])
+
+async function openEvalResults(user: TopUserStat) {
+    if (!user.evaluation_id) return
+    evalModalUser.value = user
+    evalModalResults.value = []
+    showEvalModal.value = true
+    evalModalLoading.value = true
+    try {
+        const res = await apiRepository.get<any[]>({
+            endpoint: `/academy/evaluations/${user.evaluation_id}/results`,
+        })
+        if (res?.success) {
+            evalModalResults.value = res.data
+        }
+    } catch (e) {
+        console.error('Error fetching eval results:', e)
+    } finally {
+        evalModalLoading.value = false
+    }
+}
+
+function closeEvalModal() {
+    showEvalModal.value = false
+    evalModalUser.value = null
+    evalModalResults.value = []
+}
 
 async function fetchStats() {
     loading.value = true
@@ -203,6 +232,7 @@ const filteredLessons = computed(() => {
                                 <th class="px-2 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Lecciones</th>
                                 <th class="px-2 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Lecciones Completadas</th>
                                 <th class="px-2 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Agencia</th>
+                                <th class="px-2 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground text-center">Evaluación</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border/40">
@@ -255,9 +285,26 @@ const filteredLessons = computed(() => {
                                         {{ user.agency_name }}
                                     </span>
                                 </td>
+                                <!-- Acciones: botón de evaluación -->
+                                <td class="p-2 text-center">
+                                    <template v-if="user.has_evaluation">
+                                        <button v-if="user.has_evaluation_result"
+                                            @click="openEvalResults(user)"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border"
+                                            :class="user.evaluation_passed
+                                                ? 'bg-success/10 text-success border-success/20 hover:bg-success/20'
+                                                : 'bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20'"
+                                            :title="`Ver resultado de evaluación — ${user.evaluation_score}%`">
+                                            <FileText class="w-3.5 h-3.5" />
+                                            {{ user.evaluation_score }}%
+                                        </button>
+                                        <span v-else class="text-xs text-muted-foreground italic">Pendiente</span>
+                                    </template>
+                                    <span v-else class="text-xs text-muted-foreground/40">—</span>
+                                </td>
                             </tr>
                             <tr v-if="filteredUsers.length === 0">
-                                <td colspan="4" class="p-8 text-center text-muted-foreground">
+                                <td colspan="6" class="p-8 text-center text-muted-foreground">
                                     No se encontraron usuarios.
                                 </td>
                             </tr>
@@ -375,4 +422,154 @@ const filteredLessons = computed(() => {
             </div>
         </div>
     </div>
+
+    <!-- ═══ Evaluation Results Modal ═══════════════════════════════════════════ -->
+    <Teleport to="body">
+        <Transition name="modal">
+            <div v-if="showEvalModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeEvalModal" />
+
+                <div class="relative z-10 w-full max-w-4xl mx-auto max-h-[90vh] flex flex-col">
+                    <div class="bg-card border border-border/50 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+
+                        <!-- Header -->
+                        <div class="flex items-start justify-between px-6 py-5 border-b border-border/50 shrink-0">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                                    Resultados de Evaluación
+                                </p>
+                                <h2 class="text-base font-bold text-foreground">{{ evalModalUser?.module_name }}</h2>
+                            </div>
+                            <button @click="closeEvalModal" class="p-2 rounded-lg hover:bg-muted transition-colors shrink-0 mt-0.5">
+                                <X class="w-4 h-4 text-muted-foreground" />
+                            </button>
+                        </div>
+
+                        <!-- Loading -->
+                        <div v-if="evalModalLoading" class="flex items-center justify-center py-16">
+                            <Loader2 class="w-6 h-6 animate-spin text-primary" />
+                        </div>
+
+                        <!-- Content -->
+                        <div v-else class="overflow-y-auto flex-1 p-6 space-y-4">
+
+                            <!-- Empty state -->
+                            <div v-if="evalModalResults.length === 0"
+                                class="text-center py-12 text-muted-foreground">
+                                <FileText class="w-10 h-10 mx-auto mb-3 opacity-20" />
+                                <p class="font-medium">Sin resultados aún</p>
+                                <p class="text-xs mt-1">Ningún usuario ha completado la evaluación de este módulo.</p>
+                            </div>
+
+                            <!-- Results table -->
+                            <template v-else>
+                                <!-- Summary chips -->
+                                <div class="flex flex-wrap gap-2 mb-2">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted text-xs font-semibold text-foreground">
+                                        {{ evalModalResults.length }} resultado{{ evalModalResults.length !== 1 ? 's' : '' }}
+                                    </span>
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success/10 text-success text-xs font-semibold">
+                                        <CheckCircle2 class="w-3.5 h-3.5" />
+                                        {{ evalModalResults.filter(r => r.passed).length }} aprobaron
+                                    </span>
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-destructive/10 text-destructive text-xs font-semibold">
+                                        <XCircle class="w-3.5 h-3.5" />
+                                        {{ evalModalResults.filter(r => !r.passed).length }} no aprobaron
+                                    </span>
+                                </div>
+
+                                <div class="rounded-2xl border border-border/50 overflow-hidden">
+                                    <table class="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr class="bg-muted/40 border-b border-border/50">
+                                                <th class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Usuario</th>
+                                                <th class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Agencia</th>
+                                                <th class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground text-center">Puntaje</th>
+                                                <th class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground text-center">Estado</th>
+                                                <th class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Fecha</th>
+                                                <th class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Visualizar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-border/40">
+                                            <tr v-for="result in evalModalResults" :key="result.user_id"
+                                                class="hover:bg-muted/20 transition-colors"
+                                                :class="result.user_id === evalModalUser?.user_id ? 'bg-primary/5' : ''">
+                                                <td class="px-4 py-3">
+                                                    <div class="flex items-center gap-2">
+                                                        <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+                                                            {{ result.user_name?.charAt(0).toUpperCase() }}
+                                                        </div>
+                                                        <div>
+                                                            <p class="text-sm font-semibold text-foreground leading-tight">
+                                                                {{ result.user_name }}
+                                                            </p>
+                                                            <p class="text-[10px] text-muted-foreground">{{ result.user_email }}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <span v-if="result.agency_name"
+                                                        class="text-xs px-2 py-0.5 rounded-full font-bold"
+                                                        style="background-color: hsla(16,85%,55%,0.1); color: hsl(16,85%,55%)">
+                                                        {{ result.agency_name }}
+                                                    </span>
+                                                    <span v-else class="text-xs text-muted-foreground">—</span>
+                                                </td>
+                                                <td class="px-4 py-3 text-center">
+                                                    <span class="text-sm font-bold"
+                                                        :class="result.passed ? 'text-success' : 'text-destructive'">
+                                                        {{ result.score }}%
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 text-center">
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                                        :class="result.passed
+                                                            ? 'bg-success/10 text-success'
+                                                            : 'bg-destructive/10 text-destructive'">
+                                                        <CheckCircle2 v-if="result.passed" class="w-3 h-3" />
+                                                        <XCircle v-else class="w-3 h-3" />
+                                                        {{ result.passed ? 'Aprobado' : 'No aprobado' }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                                                    {{ result.completed_at
+                                                        ? new Date(result.completed_at).toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' })
+                                                        : '—' }}
+                                                </td>
+                                                <td class="px-4 py-3 text-center">
+                                                    <button type="button" @click="() => { }"
+                                                        class="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                                                        <Eye class="w-4 h-4 text-muted-foreground" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="px-6 py-4 border-t border-border/50 bg-muted/10 shrink-0 flex justify-end">
+                            <button @click="closeEvalModal"
+                                class="px-6 py-2.5 rounded-xl text-sm font-bold text-muted-foreground hover:bg-muted transition-colors">
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+    </Teleport>
 </template>
+
+<style scoped>
+.modal-enter-active,
+.modal-leave-active {
+    transition: opacity 0.25s ease;
+}
+.modal-enter-from,
+.modal-leave-to {
+    opacity: 0;
+}
+</style>
