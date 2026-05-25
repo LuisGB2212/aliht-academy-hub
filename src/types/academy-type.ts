@@ -219,6 +219,7 @@ export interface EvaluationResult {
 }
 
 export interface EvaluationResultResponse {
+    id: number
     agency_id: number
     agency_name?: string
     completed_at: string

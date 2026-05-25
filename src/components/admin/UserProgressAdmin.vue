@@ -18,15 +18,14 @@ const evalModalUser = ref<TopUserStat | null>(null)
 const evalModalResults = ref<EvaluationResultResponse[]>([])
 const evalModalTab = ref<'detail' | 'all'>('detail')
 
-// Resultado del usuario seleccionado (incluye answers + evaluation con questions)
-const selectedUserResult = computed(() =>
-    evalModalResults.value.find(r => r.user_id === evalModalUser.value?.user_id) ?? null
-)
+// Resultado activo en el tab de detalle (puede ser cualquiera de la lista, no solo el del usuario original)
+const selectedDetailResult = ref<any | null>(null)
 
 async function openEvalResults(user: TopUserStat) {
     if (!user.evaluation_id) return
     evalModalUser.value = user
     evalModalResults.value = []
+    selectedDetailResult.value = null
     evalModalTab.value = 'detail'
     showEvalModal.value = true
     evalModalLoading.value = true
@@ -36,6 +35,8 @@ async function openEvalResults(user: TopUserStat) {
         })
         if (res?.success) {
             evalModalResults.value = res.data
+            // Apuntar al resultado más reciente del usuario clickeado como punto de entrada
+            selectedDetailResult.value = res.data.find((r: any) => r.user_id === user.user_id) ?? res.data[0] ?? null
         }
     } catch (e) {
         console.error('Error fetching eval results:', e)
@@ -44,15 +45,21 @@ async function openEvalResults(user: TopUserStat) {
     }
 }
 
+function viewDetail(result: any) {
+    selectedDetailResult.value = result
+    evalModalTab.value = 'detail'
+}
+
 function closeEvalModal() {
     showEvalModal.value = false
     evalModalUser.value = null
     evalModalResults.value = []
+    selectedDetailResult.value = null
 }
 
 // Determina el estado visual de una opción según si es correcta y si el usuario la eligió
 function getOptionState(questionId: string, optionId: string, isCorrect?: boolean): 'correct-selected' | 'correct-missed' | 'wrong-selected' | 'neutral' {
-    const userSelected = (selectedUserResult.value?.answers?.[questionId] ?? []).includes(optionId)
+    const userSelected = (selectedDetailResult.value?.answers?.[questionId] ?? []).includes(optionId)
     if (isCorrect && userSelected) return 'correct-selected'
     if (isCorrect && !userSelected) return 'correct-missed'
     if (!isCorrect && userSelected) return 'wrong-selected'
@@ -455,7 +462,7 @@ const filteredLessons = computed(() => {
                                     Evaluación · {{ evalModalUser?.module_name }}
                                 </p>
                                 <h2 class="text-base font-bold text-foreground">
-                                    {{ selectedUserResult?.evaluation?.title ?? 'Resultado de Evaluación' }}
+                                    {{ selectedDetailResult?.evaluation?.title ?? 'Resultado de Evaluación' }}
                                 </h2>
                             </div>
                             <button @click="closeEvalModal" class="p-2 rounded-lg hover:bg-muted transition-colors shrink-0">
@@ -472,31 +479,31 @@ const filteredLessons = computed(() => {
                             <!-- User result card + Tabs -->
                             <div class="px-6 pt-4 shrink-0">
                                 <!-- Selected user card -->
-                                <div v-if="selectedUserResult"
+                                <div v-if="selectedDetailResult"
                                     class="flex items-center gap-4 p-3 rounded-2xl border mb-4"
-                                    :class="selectedUserResult.passed
+                                    :class="selectedDetailResult.passed
                                         ? 'bg-success/5 border-success/20'
                                         : 'bg-destructive/5 border-destructive/20'">
                                     <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-sm shrink-0">
-                                        {{ selectedUserResult.user_name?.charAt(0).toUpperCase() }}
+                                        {{ selectedDetailResult.user_name?.charAt(0).toUpperCase() }}
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <p class="font-bold text-sm text-foreground truncate">{{ selectedUserResult.user_name }}</p>
-                                        <p class="text-[10px] text-muted-foreground truncate">{{ selectedUserResult.user_email }}</p>
+                                        <p class="font-bold text-sm text-foreground truncate">{{ selectedDetailResult.user_name }}</p>
+                                        <p class="text-[10px] text-muted-foreground truncate">{{ selectedDetailResult.user_email }}</p>
                                     </div>
                                     <!-- Score ring -->
                                     <div class="text-center shrink-0">
                                         <p class="text-2xl font-black leading-none"
-                                            :class="selectedUserResult.passed ? 'text-success' : 'text-destructive'">
-                                            {{ selectedUserResult.score }}%
+                                            :class="selectedDetailResult.passed ? 'text-success' : 'text-destructive'">
+                                            {{ selectedDetailResult.score }}%
                                         </p>
                                         <p class="text-[9px] font-semibold uppercase tracking-wider mt-0.5"
-                                            :class="selectedUserResult.passed ? 'text-success' : 'text-destructive'">
-                                            {{ selectedUserResult.passed ? 'Aprobado' : 'No aprobado' }}
+                                            :class="selectedDetailResult.passed ? 'text-success' : 'text-destructive'">
+                                            {{ selectedDetailResult.passed ? 'Aprobado' : 'No aprobado' }}
                                         </p>
                                     </div>
                                     <div class="shrink-0">
-                                        <CheckCircle2 v-if="selectedUserResult.passed" class="w-7 h-7 text-success" />
+                                        <CheckCircle2 v-if="selectedDetailResult.passed" class="w-7 h-7 text-success" />
                                         <XCircle v-else class="w-7 h-7 text-destructive" />
                                     </div>
                                 </div>
@@ -525,7 +532,7 @@ const filteredLessons = computed(() => {
 
                             <!-- ═══ TAB: Detalle de Respuestas ══════════════════ -->
                             <div v-if="evalModalTab === 'detail'" class="overflow-y-auto flex-1 px-6 py-4 space-y-4">
-                                <div v-if="!selectedUserResult" class="text-center py-12 text-muted-foreground">
+                                <div v-if="!selectedDetailResult" class="text-center py-12 text-muted-foreground">
                                     <FileText class="w-10 h-10 mx-auto mb-3 opacity-20" />
                                     <p class="font-medium text-sm">Sin datos de respuestas.</p>
                                 </div>
@@ -545,7 +552,7 @@ const filteredLessons = computed(() => {
                                     </div>
 
                                     <!-- Questions -->
-                                    <div v-for="(q, qi) in (selectedUserResult?.evaluation?.questions ?? [])" :key="q.id"
+                                    <div v-for="(q, qi) in (selectedDetailResult?.evaluation?.questions ?? [])" :key="q.id"
                                         class="rounded-2xl border border-border/50 overflow-hidden">
 
                                         <!-- Question header -->
@@ -562,14 +569,14 @@ const filteredLessons = computed(() => {
                                             <!-- Question result badge -->
                                             <span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full"
                                                 :class="q.options.every((o: any) =>
-                                                    (o.correct && (selectedUserResult?.answers?.[q.id] ?? []).includes(o.id)) ||
-                                                    (!o.correct && !(selectedUserResult?.answers?.[q.id] ?? []).includes(o.id))
+                                                    (o.correct && (selectedDetailResult?.answers?.[q.id] ?? []).includes(o.id)) ||
+                                                    (!o.correct && !(selectedDetailResult?.answers?.[q.id] ?? []).includes(o.id))
                                                 )
                                                     ? 'bg-success/10 text-success'
                                                     : 'bg-destructive/10 text-destructive'">
                                                 {{ q.options.every((o: any) =>
-                                                    (o.correct && (selectedUserResult?.answers?.[q.id] ?? []).includes(o.id)) ||
-                                                    (!o.correct && !(selectedUserResult?.answers?.[q.id] ?? []).includes(o.id))
+                                                    (o.correct && (selectedDetailResult?.answers?.[q.id] ?? []).includes(o.id)) ||
+                                                    (!o.correct && !(selectedDetailResult?.answers?.[q.id] ?? []).includes(o.id))
                                                 ) ? '✓ Correcta' : '✗ Incorrecta' }}
                                             </span>
                                         </div>
@@ -611,10 +618,10 @@ const filteredLessons = computed(() => {
 
                                     <!-- Metadata footer -->
                                     <p class="text-xs text-muted-foreground text-center pt-1">
-                                        Respondido el {{ selectedUserResult.completed_at
-                                            ? new Date(selectedUserResult.completed_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                                        Respondido el {{ selectedDetailResult.completed_at
+                                            ? new Date(selectedDetailResult.completed_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
                                             : '—' }}
-                                        · Puntaje mínimo requerido: <strong>{{ selectedUserResult.evaluation?.passing_score }}%</strong>
+                                        · Puntaje mínimo requerido: <strong>{{ selectedDetailResult.evaluation?.passing_score }}%</strong>
                                     </p>
                                 </template>
                             </div>
@@ -653,10 +660,11 @@ const filteredLessons = computed(() => {
                                                     <th class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground text-center">Puntaje</th>
                                                     <th class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground text-center">Estado</th>
                                                     <th class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Fecha</th>
+                                                    <th class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground text-center">Detalle</th>
                                                 </tr>
                                             </thead>
                                             <tbody class="divide-y divide-border/40">
-                                                <tr v-for="result in evalModalResults" :key="result.user_id"
+                                                <tr v-for="result in evalModalResults" :key="result.id"
                                                     class="hover:bg-muted/20 transition-colors"
                                                     :class="result.user_id === evalModalUser?.user_id ? 'bg-primary/5' : ''">
                                                     <td class="px-4 py-3">
@@ -700,6 +708,16 @@ const filteredLessons = computed(() => {
                                                         {{ result.completed_at
                                                             ? new Date(result.completed_at).toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' })
                                                             : '—' }}
+                                                    </td>
+                                                    <td class="px-4 py-3 text-center">
+                                                        <button @click="viewDetail(result)"
+                                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors"
+                                                            :class="selectedDetailResult?.id === result.id
+                                                                ? 'bg-primary text-primary-foreground'
+                                                                : 'bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary'">
+                                                            <FileText class="w-3 h-3" />
+                                                            Ver
+                                                        </button>
                                                     </td>
                                                 </tr>
                                             </tbody>
