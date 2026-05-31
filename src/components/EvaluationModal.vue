@@ -109,14 +109,14 @@ const scoreColor = computed(() => {
                             <p class="text-white/70 text-xs font-semibold uppercase tracking-widest mb-1">{{ moduleName }}</p>
                             <h2 class="text-lg font-bold text-white">{{ evaluation.title }}</h2>
                             <div v-if="evaluation.description">
-                                <h4 class="text-white/70 text-md mt-1">Objetivo</h4>
-                                <p class="text-white/70 text-sm mt-1">{{ evaluation.description }}</p>
+                                <h4 class="text-white/80 text-md mt-1 font-semibold">Objetivo</h4>
+                                <p class="text-white/80 text-sm mt-1">{{ evaluation.description }}</p>
                             </div>
                             <div v-if="evaluation.practice_exercise">
-                                <h4 class="text-white/70 text-md mt-1">Ejercicio práctico</h4>
-                                <p class="text-white/70 text-sm mt-1">{{ evaluation.practice_exercise }}</p>
+                                <h4 class="text-white/80 text-md mt-4 font-semibold">Ejercicio práctico</h4>
+                                <p class="text-white/80 text-sm mt-1">{{ evaluation.practice_exercise }}</p>
                             </div>
-                            <p class="text-white/60 text-xs mt-2">Puntaje mínimo para aprobar: <strong class="text-white">{{ evaluation.passing_score }}%</strong></p>
+                            <p class="text-white/70 text-xs mt-3">Puntaje mínimo para aprobar: <strong class="text-white">{{ evaluation.passing_score }}%</strong></p>
                         </div>
 
                         <!-- ═══ QUIZ step ═══════════════════════════════════════ -->
@@ -125,7 +125,7 @@ const scoreColor = computed(() => {
                                 <div v-for="(q, qi) in evaluation.questions" :key="q.id">
                                     <p class="text-sm font-semibold text-foreground mb-3">
                                         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full gradient-bg text-primary-foreground text-[10px] font-bold mr-2">{{ qi + 1 }}</span>
-                                        {{ q.question }}
+                                        {{ q.question }} <span class="text-xs font-medium ml-2" v-if="q.weight">({{ q.weight }} %)</span>
                                     </p>
 
                                     <div class="space-y-2">
@@ -144,7 +144,7 @@ const scoreColor = computed(() => {
                                                 </span>
                                             </div>
                                             <p class="text-[10px] text-muted-foreground/70 flex items-center gap-1">
-                                                <span class="text-violet-500">🤖</span> Tu respuesta será evaluada automáticamente por IA
+                                                Tu respuesta será evaluada automáticamente
                                             </p>
                                         </template>
 
@@ -153,11 +153,11 @@ const scoreColor = computed(() => {
                                             <button v-for="opt in q.options" :key="opt.id"
                                                 @click="q.type === 'multiple_choice' ? toggleMultiple(q.id, opt.id) : selectSingle(q.id, opt.id)"
                                                 type="button"
-                                                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-all text-left"
+                                                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-normal transition-all text-left"
                                                 :class="isSelected(q.id, opt.id)
                                                     ? 'gradient-bg text-primary-foreground border-transparent shadow-md'
                                                     : 'bg-muted/30 border-border text-foreground hover:bg-muted hover:border-primary/30'">
-                                                <span class="shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all text-xs font-bold"
+                                                <span class="shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all text-xs font-semibold"
                                                     :class="isSelected(q.id, opt.id)
                                                         ? 'border-white/60 bg-white/20 text-white'
                                                         : 'border-muted-foreground/30'">

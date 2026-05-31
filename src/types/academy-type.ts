@@ -50,6 +50,7 @@ export interface Module {
     practice_exercise?: string
     order: number
     visible: boolean
+    folder_id?: number        // carpeta a la que pertenece
     platforms?: Platform[]   // populated on fetch (display)
     platform_ids?: number[]  // used when saving
     profile_ids?: number[]   // hardcoded profile IDs
@@ -185,6 +186,17 @@ export interface AcademyPlatformStatistics {
     by_agency: AgencyStat[];
 }
 
+// ─── Folders ───────────────────────────────────────────────────────
+
+export interface AcademyFolder {
+    id: number
+    name: string
+    order: number
+    modules_count?: number
+    created_at?: string
+    updated_at?: string
+}
+
 // ─── Evaluations ──────────────────────────────────────────────────
 
 export type EvaluationQuestionType = 'single_choice' | 'multiple_choice' | 'true_false' | 'open_answer'
@@ -217,6 +229,7 @@ export interface EvaluationQuestion {
     type: EvaluationQuestionType
     options: EvaluationOption[]
     expected_answer?: string  // solo para tipo open_answer, visible solo en admin
+    weight?: number           // porcentaje de calificación (0-100); null = auto
 }
 
 export interface ModuleEvaluation {

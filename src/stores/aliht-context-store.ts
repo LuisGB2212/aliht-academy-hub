@@ -20,6 +20,7 @@ import type {
     AcademyUserProgress,
     ModuleEvaluation,
     EvaluationResult,
+    AcademyFolder,
 } from '@/types/academy-type'
 import { apiRepository } from '@/utils/apiRepository'
 import { useAuthStore } from '@/stores/auth'
@@ -31,6 +32,7 @@ export const useLmsStore = defineStore('lms', () => {
     const platforms = ref<Platform[]>([])
     const modules = ref<Module[]>([])
     const lessons = ref<Lesson[]>([])
+    const folders = ref<AcademyFolder[]>([])
 
     const loading = ref<Record<string, boolean>>({})
 
@@ -170,6 +172,71 @@ export const useLmsStore = defineStore('lms', () => {
         id: number
     ): T[] {
         return list.filter(i => i.id !== id)
+    }
+
+    // ─── Folder CRUD ──────────────────────────────────────────────────
+    async function fetchFolders(force = false) {
+        if (!shouldFetch(folders.value, force)) return
+        return handleRequest<AcademyFolder[]>(
+            'fetchFolders',
+            () => apiRepository.get({ endpoint: '/academy/folders' }),
+            data => { folders.value = data },
+            force
+        )
+    }
+
+    async function createFolder(data: Partial<AcademyFolder>) {
+        return handleRequest<AcademyFolder>(
+            'createFolder',
+            () => apiRepository.post({ endpoint: '/academy/folders', body: data }),
+            res => { folders.value = upsertItem(folders.value, res) },
+            true
+        )
+    }
+
+    async function updateFolder(id: number, data: Partial<AcademyFolder>) {
+        return handleRequest<AcademyFolder>(
+            'updateFolder',
+            () => apiRepository.put({ endpoint: `/academy/folders/${id}`, body: data }),
+            res => { folders.value = upsertItem(folders.value, res) },
+            true
+        )
+    }
+
+    async function deleteFolder(id: number) {
+        return handleRequest<void>(
+            'deleteFolder',
+            () => apiRepository.delete({ endpoint: `/academy/folders/${id}` }),
+            () => { folders.value = removeItem(folders.value, id) },
+            true
+        )
+    }
+
+    async function reorderFolders(orders: { id: number; order: number }[]) {
+        return handleRequest(
+            'reorderFolders',
+            () => apiRepository.post({ endpoint: '/academy/folders/reorder', body: { orders } }),
+            () => {
+                orders.forEach(o => {
+                    const f = folders.value.find(x => x.id === o.id)
+                    if (f) f.order = o.order
+                })
+            },
+            true
+        )
+    }
+
+    /** Fetches modules for a specific folder (filtered on the server). */
+    async function fetchModulesByFolder(folderId: number) {
+        return handleRequest<Module[]>(
+            `fetchModulesByFolder-${folderId}`,
+            () => apiRepository.get({ endpoint: '/academy/modules', params: { folder_id: folderId } }),
+            data => {
+                // Merge into the global modules list (upsert each)
+                data.forEach(m => { modules.value = upsertItem(modules.value, m) })
+            },
+            true
+        )
     }
 
     // ─── Platform CRUD ─────────────────────────────────────────────────────────
@@ -580,6 +647,7 @@ export const useLmsStore = defineStore('lms', () => {
         platforms,
         modules,
         lessons,
+        folders,
         progress,
         loading,
         isLoading,
@@ -590,6 +658,13 @@ export const useLmsStore = defineStore('lms', () => {
         fetchModules,
         fetchLessons,
         fetchPlatformContent,
+        fetchFolders,
+        fetchModulesByFolder,
+
+        createFolder,
+        updateFolder,
+        deleteFolder,
+        reorderFolders,
 
         createPlatform,
         updatePlatform,
