@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useLmsStore } from '@/stores/aliht-context-store'
 import type { ModuleEvaluation, EvaluationResult } from '@/types/academy-type'
-import { CheckCircle2, XCircle, Loader2, Trophy, RotateCcw } from 'lucide-vue-next'
+import { CheckCircle2, XCircle, Loader2, Trophy, RotateCcw, ChevronDown } from 'lucide-vue-next'
 
 const props = defineProps<{
     evaluation: ModuleEvaluation
@@ -22,6 +22,12 @@ const answers = ref<Record<string, string[]>>({})
 const submitting = ref(false)
 const result = ref<EvaluationResult | null>(null)
 const step = ref<'quiz' | 'result'>('quiz')
+
+// Header accordion — collapsed by default when description/exercise exist
+const headerExpanded = ref(false)
+const hasDetails = computed(() =>
+    !!(props.evaluation.description || props.evaluation.practice_exercise)
+)
 
 // ─── Answer helpers ────────────────────────────────────────────────────────
 
@@ -104,19 +110,50 @@ const scoreColor = computed(() => {
                 <div class="relative z-10 w-full max-w-2xl mx-auto max-h-[90vh] flex flex-col">
                     <div class="bg-card border border-border/50 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
-                        <!-- Header -->
-                        <div class="gradient-bg px-6 py-5 shrink-0">
-                            <p class="text-white/70 text-xs font-semibold uppercase tracking-widest mb-1">{{ moduleName }}</p>
-                            <h2 class="text-lg font-bold text-white">{{ evaluation.title }}</h2>
-                            <div v-if="evaluation.description">
-                                <h4 class="text-white/80 text-md mt-1 font-semibold">Objetivo</h4>
-                                <p class="text-white/80 text-sm mt-1">{{ evaluation.description }}</p>
+                        <!-- Header (accordion) -->
+                        <div class="bg-primary shrink-0">
+                            <!-- Always-visible summary row -->
+                            <div class="px-6 pt-5"
+                                :class="headerExpanded && hasDetails ? 'pb-2' : 'pb-5'">
+                                <p class="text-white/70 text-xs font-semibold uppercase tracking-widest mb-1">{{ moduleName }}</p>
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="flex-1 min-w-0">
+                                        <h2 class="text-lg font-bold text-white leading-tight">{{ evaluation.title }}</h2>
+                                        <p class="text-white/70 text-xs mt-1.5">
+                                            Puntaje mínimo para aprobar:
+                                            <strong class="text-white">{{ evaluation.passing_score }}%</strong>
+                                        </p>
+                                    </div>
+                                    <!-- Toggle button — only show if there are details -->
+                                    <button v-if="hasDetails"
+                                        @click="headerExpanded = !headerExpanded"
+                                        type="button"
+                                        class="shrink-0 mt-0.5 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-xs font-semibold transition-all"
+                                        :title="headerExpanded ? 'Ocultar detalles' : 'Ver objetivo y ejercicio'">
+                                        <span>{{ headerExpanded ? 'Ocultar' : 'Ver más' }}</span>
+                                        <ChevronDown
+                                            class="w-3.5 h-3.5 transition-transform duration-300"
+                                            :class="headerExpanded ? 'rotate-180' : 'rotate-0'"
+                                        />
+                                    </button>
+                                </div>
                             </div>
-                            <div v-if="evaluation.practice_exercise">
-                                <h4 class="text-white/80 text-md mt-4 font-semibold">Ejercicio práctico</h4>
-                                <p class="text-white/80 text-sm mt-1">{{ evaluation.practice_exercise }}</p>
+
+                            <!-- Collapsible details -->
+                            <div
+                                class="accordion-body overflow-hidden"
+                                :class="headerExpanded ? 'accordion-open' : 'accordion-closed'">
+                                <div class="px-6 pb-5 pt-1 space-y-3">
+                                    <div v-if="evaluation.description" class="rounded-xl bg-white/10 px-4 py-3">
+                                        <h4 class="text-white text-xs font-bold uppercase tracking-wider mb-1">Objetivo</h4>
+                                        <p class="text-white/90 text-sm leading-relaxed">{{ evaluation.description }}</p>
+                                    </div>
+                                    <div v-if="evaluation.practice_exercise" class="rounded-xl bg-white/10 px-4 py-3">
+                                        <h4 class="text-white text-xs font-bold uppercase tracking-wider mb-1">Ejercicio práctico</h4>
+                                        <p class="text-white/90 text-sm leading-relaxed">{{ evaluation.practice_exercise }}</p>
+                                    </div>
+                                </div>
                             </div>
-                            <p class="text-white/70 text-xs mt-3">Puntaje mínimo para aprobar: <strong class="text-white">{{ evaluation.passing_score }}%</strong></p>
                         </div>
 
                         <!-- ═══ QUIZ step ═══════════════════════════════════════ -->
@@ -252,5 +289,19 @@ const scoreColor = computed(() => {
 .modal-enter-from,
 .modal-leave-to {
     opacity: 0;
+}
+
+/* ── Accordion ─────────────────────────────────────────── */
+.accordion-body {
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity   0.3s  ease;
+}
+.accordion-closed {
+    max-height: 0;
+    opacity: 0;
+}
+.accordion-open {
+    max-height: 32rem; /* tall enough for any realistic text */
+    opacity: 1;
 }
 </style>
