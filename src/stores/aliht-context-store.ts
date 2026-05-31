@@ -556,6 +556,19 @@ export const useLmsStore = defineStore('lms', () => {
         }
     }
 
+    // ─── Module completion (local) ────────────────────────────────────────────
+    /**
+     * Retorna true si TODAS las lecciones del módulo están completadas localmente.
+     * No requiere llamada a API — usa el estado de progress local.
+     */
+    function isModuleCompleted(moduleId: number): boolean {
+        const mods = getModuleLessons(moduleId)
+        if (mods.length === 0) return false
+        return mods.every(l =>
+            progress.value.some(p => p.lessonId === l.id && p.completed)
+        )
+    }
+
     const getLessonStatus = (lessonId: number) => {
         const p = progress.value.find(pr => pr.lessonId === lessonId)
         if (!p) return 'not_started'
@@ -609,5 +622,6 @@ export const useLmsStore = defineStore('lms', () => {
         getPlatformModules,
         getCourseProgress,
         getLessonStatus,
+        isModuleCompleted,
     }
 })

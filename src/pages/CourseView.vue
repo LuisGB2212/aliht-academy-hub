@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/auth'
 import {
     CheckCircle2, Circle, PlayCircle, FileText,
     Link as LinkIcon, Type, ChevronDown, ArrowRight,
-    Monitor, BarChart3
+    Monitor, BarChart3, Trophy
 } from 'lucide-vue-next'
 
 const route = useRoute();
@@ -134,9 +134,19 @@ const contentIcons: Record<string, any> = {
 
                         <!-- Info -->
                         <div>
-                            <h3 class="font-semibold text-foreground text-sm md:text-base uppercase tracking-tight">
-                                {{ mod.name }}
-                            </h3>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-semibold text-foreground text-sm md:text-base uppercase tracking-tight">
+                                    {{ mod.name }}
+                                </h3>
+                                <!-- Trophy: module completed -->
+                                <Transition name="trophy-pop">
+                                    <span v-if="store.isModuleCompleted(mod.id)"
+                                        class="inline-flex items-center gap-1 text-amber-500"
+                                        title="¡Módulo completado!">
+                                        <Trophy class="w-4 h-4 fill-amber-400 text-amber-500" />
+                                    </span>
+                                </Transition>
+                            </div>
 
                             <p class="text-xs text-muted-foreground mt-1">
                                 {{
@@ -217,3 +227,20 @@ const contentIcons: Record<string, any> = {
         <RouterLink to="/" class="mt-6 text-sm font-bold text-primary hover:underline">Volver al Dashboard</RouterLink>
     </div>
 </template>
+
+<style scoped>
+.trophy-pop-enter-active {
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.trophy-pop-enter-from {
+    opacity: 0;
+    transform: scale(0.4) rotate(-20deg);
+}
+.trophy-pop-leave-active {
+    transition: all 0.2s ease;
+}
+.trophy-pop-leave-to {
+    opacity: 0;
+    transform: scale(0.6);
+}
+</style>

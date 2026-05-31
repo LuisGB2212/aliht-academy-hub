@@ -43,6 +43,15 @@ function isSelected(qId: string, optId: string): boolean {
     return (answers.value[qId] ?? []).includes(optId)
 }
 
+// Open answer: store the typed text as a single-element array
+function setOpenAnswer(qId: string, text: string) {
+    answers.value[qId] = text ? [text] : []
+}
+
+function getOpenAnswer(qId: string): string {
+    return answers.value[qId]?.[0] ?? ''
+}
+
 // ─── Validation ────────────────────────────────────────────────────────────
 
 const allAnswered = computed(() =>
@@ -120,31 +129,53 @@ const scoreColor = computed(() => {
                                     </p>
 
                                     <div class="space-y-2">
-                                        <button v-for="opt in q.options" :key="opt.id"
-                                            @click="q.type === 'multiple_choice' ? toggleMultiple(q.id, opt.id) : selectSingle(q.id, opt.id)"
-                                            type="button"
-                                            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-all text-left"
-                                            :class="isSelected(q.id, opt.id)
-                                                ? 'gradient-bg text-primary-foreground border-transparent shadow-md'
-                                                : 'bg-muted/30 border-border text-foreground hover:bg-muted hover:border-primary/30'">
-                                            <span class="shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all text-xs font-bold"
-                                                :class="isSelected(q.id, opt.id)
-                                                    ? 'border-white/60 bg-white/20 text-white'
-                                                    : 'border-muted-foreground/30'">
-                                                <template v-if="q.type === 'multiple_choice'">
-                                                    <CheckCircle2 v-if="isSelected(q.id, opt.id)" class="w-3.5 h-3.5" />
-                                                </template>
-                                                <template v-else>
-                                                    {{ String.fromCharCode(65 + q.options.indexOf(opt)) }}
-                                                </template>
-                                            </span>
-                                            {{ opt.text }}
-                                        </button>
-                                    </div>
+                                        <!-- Open answer: textarea -->
+                                        <template v-if="q.type === 'open_answer'">
+                                            <div class="relative">
+                                                <textarea
+                                                    :value="getOpenAnswer(q.id)"
+                                                    @input="setOpenAnswer(q.id, ($event.target as HTMLTextAreaElement).value)"
+                                                    rows="4"
+                                                    placeholder="Escribe tu respuesta aquí..."
+                                                    class="w-full px-4 py-3 rounded-xl border border-input bg-background text-sm resize-none outline-none focus:ring-2 focus:ring-primary/20 transition-shadow"
+                                                />
+                                                <span class="absolute bottom-2 right-3 text-[10px] text-muted-foreground">
+                                                    {{ getOpenAnswer(q.id).length }} caracteres
+                                                </span>
+                                            </div>
+                                            <p class="text-[10px] text-muted-foreground/70 flex items-center gap-1">
+                                                <span class="text-violet-500">🤖</span> Tu respuesta será evaluada automáticamente por IA
+                                            </p>
+                                        </template>
 
-                                    <p v-if="q.type === 'multiple_choice'" class="text-[10px] text-muted-foreground mt-1.5 ml-1">
-                                        Selección múltiple — elige todas las que apliquen
-                                    </p>
+                                        <!-- Choice-based questions -->
+                                        <template v-else>
+                                            <button v-for="opt in q.options" :key="opt.id"
+                                                @click="q.type === 'multiple_choice' ? toggleMultiple(q.id, opt.id) : selectSingle(q.id, opt.id)"
+                                                type="button"
+                                                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-all text-left"
+                                                :class="isSelected(q.id, opt.id)
+                                                    ? 'gradient-bg text-primary-foreground border-transparent shadow-md'
+                                                    : 'bg-muted/30 border-border text-foreground hover:bg-muted hover:border-primary/30'">
+                                                <span class="shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all text-xs font-bold"
+                                                    :class="isSelected(q.id, opt.id)
+                                                        ? 'border-white/60 bg-white/20 text-white'
+                                                        : 'border-muted-foreground/30'">
+                                                    <template v-if="q.type === 'multiple_choice'">
+                                                        <CheckCircle2 v-if="isSelected(q.id, opt.id)" class="w-3.5 h-3.5" />
+                                                    </template>
+                                                    <template v-else>
+                                                        {{ String.fromCharCode(65 + q.options.indexOf(opt)) }}
+                                                    </template>
+                                                </span>
+                                                {{ opt.text }}
+                                            </button>
+
+                                            <p v-if="q.type === 'multiple_choice'" class="text-[10px] text-muted-foreground mt-1.5 ml-1">
+                                                Selección múltiple — elige todas las que apliquen
+                                            </p>
+                                        </template>
+                                    </div>
                                 </div>
                             </div>
 

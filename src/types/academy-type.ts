@@ -47,10 +47,12 @@ export interface Module {
     id: number
     name: string
     description?: string
+    practice_exercise?: string
     order: number
     visible: boolean
     platforms?: Platform[]   // populated on fetch (display)
     platform_ids?: number[]  // used when saving
+    profile_ids?: number[]   // hardcoded profile IDs
     lessons?: Lesson[]       // nested content tree
     pivot?: {
         academy_lesson_id: number
@@ -183,9 +185,25 @@ export interface AcademyPlatformStatistics {
     by_agency: AgencyStat[];
 }
 
-// ─── Evaluations ──────────────────────────────────────────────────────────────
+// ─── Evaluations ──────────────────────────────────────────────────
 
-export type EvaluationQuestionType = 'single_choice' | 'multiple_choice' | 'true_false'
+export type EvaluationQuestionType = 'single_choice' | 'multiple_choice' | 'true_false' | 'open_answer'
+
+// ─── Profiles (hardcoded, no DB table yet) ─────────────────────────────
+
+export interface AcademyProfile {
+    id: number
+    name: string
+}
+
+export const ACADEMY_PROFILES: AcademyProfile[] = [
+    { id: 1, name: 'Gerente' },
+    { id: 2, name: 'Agente de Viaje' },
+    { id: 3, name: 'Finanzas' },
+    { id: 4, name: 'Recepción' },
+    { id: 5, name: 'Sistemas' },
+    { id: 6, name: 'Operaciones' },
+]
 
 export interface EvaluationOption {
     id: string
@@ -198,6 +216,7 @@ export interface EvaluationQuestion {
     question: string
     type: EvaluationQuestionType
     options: EvaluationOption[]
+    expected_answer?: string  // solo para tipo open_answer, visible solo en admin
 }
 
 export interface ModuleEvaluation {

@@ -154,3 +154,8 @@
     50% { transform: translateY(-10px); }
   }
 }
+
+::selection {
+  background-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+}

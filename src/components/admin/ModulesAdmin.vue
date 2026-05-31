@@ -2,7 +2,8 @@
 import { ref, onMounted, nextTick } from 'vue'
 import { useLmsStore } from '@/stores/aliht-context-store'
 import type { Module, ModuleEvaluation, EvaluationQuestion, EvaluationOption } from '@/types/academy-type'
-import { Plus, Edit, Trash2, Eye, EyeOff, GripVertical, Loader2, ClipboardList, X, PlusCircle, CheckSquare } from 'lucide-vue-next'
+import { ACADEMY_PROFILES } from '@/types/academy-type'
+import { Plus, Edit, Trash2, Eye, EyeOff, GripVertical, Loader2, ClipboardList, X, PlusCircle, CheckSquare, BrainCircuit, Users } from 'lucide-vue-next'
 import Modal from '@/components/ui/Modal.vue'
 import Sortable from 'sortablejs'
 
@@ -35,8 +36,10 @@ function startNew() {
     editing.value = {
         name: '',
         description: '',
+        practice_exercise: '',
         order: store.modules.length + 1,
         platform_ids: [],
+        profile_ids: [],
         visible: true,
     }
     showModal.value = true
@@ -45,7 +48,7 @@ function startNew() {
 function startEdit(mod: Module) {
     isNew.value = false
     const platformIds = mod.platforms?.map(p => p.id) || mod.platform_ids || []
-    editing.value = { ...mod, platform_ids: platformIds }
+    editing.value = { ...mod, platform_ids: platformIds, profile_ids: mod.profile_ids || [] }
     showModal.value = true
 }
 
@@ -92,6 +95,16 @@ function togglePlatform(id: number) {
         editing.value.platform_ids.push(id)
     } else {
         editing.value.platform_ids.splice(idx, 1)
+    }
+}
+
+function toggleProfile(id: number) {
+    if (!editing.value.profile_ids) editing.value.profile_ids = []
+    const idx = editing.value.profile_ids.indexOf(id)
+    if (idx === -1) {
+        editing.value.profile_ids.push(id)
+    } else {
+        editing.value.profile_ids.splice(idx, 1)
     }
 }
 
@@ -142,6 +155,7 @@ async function openEvalModal(mod: Module) {
             title: existing.title,
             description: existing.description ?? '',
             passing_score: existing.passing_score,
+            practice_exercise: existing.practice_exercise,
             questions: JSON.parse(JSON.stringify(existing.questions)),
             visible: existing.visible ?? true,
         }
@@ -151,6 +165,7 @@ async function openEvalModal(mod: Module) {
         evalData.value = {
             title: 'Evaluación Final',
             description: '',
+            practice_exercise: '',
             passing_score: 70,
             questions: [],
             visible: true,
@@ -174,6 +189,7 @@ function addQuestion() {
             { id: 'a', text: '', correct: true },
             { id: 'b', text: '', correct: false },
         ],
+        expected_answer: '',
     })
     evalData.value.questions = questions
 }
@@ -199,11 +215,27 @@ function onTypeChange(qi: number) {
             { id: 'true', text: 'Verdadero', correct: true },
             { id: 'false', text: 'Falso', correct: false },
         ]
-    }
-    // For single_choice, ensure only one option is marked correct
-    if (q.type === 'single_choice') {
+    } else if (q.type === 'open_answer') {
+        // Open answer: no options needed, expected_answer is the reference
+        q.options = []
+        if (!q.expected_answer) q.expected_answer = ''
+    } else if (q.type === 'single_choice') {
+        // Ensure only one correct option
+        if (!q.options?.length) {
+            q.options = [
+                { id: 'a', text: '', correct: true },
+                { id: 'b', text: '', correct: false },
+            ]
+        }
         const firstCorrect = q.options.findIndex(o => o.correct)
         q.options.forEach((o, i) => { o.correct = i === (firstCorrect >= 0 ? firstCorrect : 0) })
+    } else if (q.type === 'multiple_choice') {
+        if (!q.options?.length) {
+            q.options = [
+                { id: 'a', text: '', correct: true },
+                { id: 'b', text: '', correct: false },
+            ]
+        }
     }
 }
 
@@ -222,10 +254,18 @@ async function handleEvalSave() {
     }
     for (const q of questions) {
         if (!q.question.trim()) { alert('Todas las preguntas deben tener texto.'); return }
-        const hasCorrect = q.options.some((o: EvaluationOption) => o.correct)
-        if (!hasCorrect) { alert(`La pregunta "${q.question}" debe tener al menos una opción correcta.`); return }
-        for (const o of q.options) {
-            if (!o.text.trim()) { alert('Todas las opciones deben tener texto.'); return }
+        // Validation differs by type
+        if (q.type === 'open_answer') {
+            if (!q.expected_answer?.trim()) {
+                alert(`La pregunta "${q.question}" debe tener una respuesta esperada.`)
+                return
+            }
+        } else {
+            const hasCorrect = q.options.some((o: EvaluationOption) => o.correct)
+            if (!hasCorrect) { alert(`La pregunta "${q.question}" debe tener al menos una opción correcta.`); return }
+            for (const o of q.options) {
+                if (!o.text.trim()) { alert('Todas las opciones deben tener texto.'); return }
+            }
         }
     }
 
@@ -300,7 +340,14 @@ async function handleEvalDelete() {
                             </span>
                         </div>
                     </div>
-                    <p class="text-xs text-muted-foreground truncate">{{ mod.description || 'Sin descripción' }}</p>
+                    <p class="text-xs text-muted-foreground truncate md:w-4xl w-lg">{{ mod.description || 'Sin descripción' }}</p>
+                    <!-- Profile badges -->
+                    <div v-if="mod.profile_ids && mod.profile_ids.length" class="flex flex-wrap gap-1 mt-1.5">
+                        <span v-for="pid in mod.profile_ids" :key="pid"
+                            class="text-[9px] px-2 py-0.5 rounded-full font-semibold bg-violet-500/10 text-violet-500 border border-violet-500/20">
+                            {{ ACADEMY_PROFILES.find(p => p.id === pid)?.name ?? pid }}
+                        </span>
+                    </div>
                 </div>
 
                 <div class="flex items-center justify-end gap-1">
@@ -352,6 +399,22 @@ async function handleEvalDelete() {
                                     ? 'gradient-bg text-primary-foreground border-transparent shadow-md shadow-primary/20'
                                     : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'">
                                 {{ plat.name }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Perfiles Asociados -->
+                    <div class="md:col-span-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                            <Users class="w-3.5 h-3.5" /> Perfiles Asociados
+                        </label>
+                        <div class="flex flex-wrap gap-2">
+                            <button v-for="prof in ACADEMY_PROFILES" :key="prof.id" @click="toggleProfile(prof.id)"
+                                type="button" class="px-4 py-2 rounded-xl text-xs font-bold transition-all border"
+                                :class="editing.profile_ids?.includes(prof.id)
+                                    ? 'bg-violet-500 text-white border-transparent shadow-md'
+                                    : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'">
+                                {{ prof.name }}
                             </button>
                         </div>
                     </div>
@@ -463,6 +526,7 @@ async function handleEvalDelete() {
                                                             <option value="single_choice">Opción única</option>
                                                             <option value="multiple_choice">Opción múltiple</option>
                                                             <option value="true_false">Verdadero / Falso</option>
+                                                            <option value="open_answer">Respuesta Abierta</option>
                                                         </select>
                                                     </div>
                                                     <button @click="removeQuestion(qi)" type="button"
@@ -471,8 +535,22 @@ async function handleEvalDelete() {
                                                     </button>
                                                 </div>
 
-                                                <!-- Options -->
-                                                <div class="space-y-2 ml-9">
+                                                <!-- Open answer: expected answer field -->
+                                                <div v-if="q.type === 'open_answer'" class="ml-9 space-y-2">
+                                                    <div class="flex items-center gap-2 mb-1">
+                                                        <BrainCircuit class="w-4 h-4 text-violet-500" />
+                                                        <span class="text-xs font-bold text-violet-500 uppercase tracking-wider">Respuesta esperada (referencia para la IA)</span>
+                                                    </div>
+                                                    <textarea v-model="q.expected_answer" rows="3"
+                                                        placeholder="Describe la respuesta correcta que el usuario debería proporcionar..."
+                                                        class="w-full px-3 py-2 rounded-xl border border-violet-400/40 bg-violet-500/5 text-sm resize-none outline-none focus:ring-2 focus:ring-violet-400/30" />
+                                                    <p class="text-[10px] text-muted-foreground/70">
+                                                        La IA evaluará la respuesta del usuario comparándola semánticamente con este texto.
+                                                    </p>
+                                                </div>
+
+                                                <!-- Options (single, multiple, true_false) -->
+                                                <div v-else class="space-y-2 ml-9">
                                                     <div v-for="(opt, oi) in q.options" :key="opt.id"
                                                         class="flex items-center gap-2">
                                                         <!-- Correct toggle -->
