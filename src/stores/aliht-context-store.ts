@@ -21,11 +21,14 @@ import type {
     ModuleEvaluation,
     EvaluationResult,
     AcademyFolder,
+    PracticeSubmission,
 } from '@/types/academy-type'
 import { apiRepository } from '@/utils/apiRepository'
 import { useAuthStore } from '@/stores/auth'
 
-const PROGRESS_KEY = 'aliht-lms-progress'
+const PROGRESS_KEY          = 'aliht-lms-progress'
+const EVAL_RESULTS_KEY      = 'aliht-lms-eval-results'      // { [moduleId]: EvaluationResult }
+const PRACTICE_SUB_KEY      = 'aliht-lms-practice-subs'     // { [evalId]: PracticeSubmission }
 
 export const useLmsStore = defineStore('lms', () => {
     // ─── State ─────────────────────────────────────────────────────────────────
@@ -33,6 +36,23 @@ export const useLmsStore = defineStore('lms', () => {
     const modules = ref<Module[]>([])
     const lessons = ref<Lesson[]>([])
     const folders = ref<AcademyFolder[]>([])
+
+    // Evaluation results cache: moduleId → EvaluationResult
+    const evalResults = ref<Record<number, EvaluationResult>>(
+        JSON.parse(localStorage.getItem(EVAL_RESULTS_KEY) ?? '{}')
+    )
+
+    // Practice submissions cache: evalId → PracticeSubmission
+    const practiceSubmissions = ref<Record<number, PracticeSubmission>>(
+        JSON.parse(localStorage.getItem(PRACTICE_SUB_KEY) ?? '{}')
+    )
+
+    function _persistEvalResults() {
+        localStorage.setItem(EVAL_RESULTS_KEY, JSON.stringify(evalResults.value))
+    }
+    function _persistPracticeSubs() {
+        localStorage.setItem(PRACTICE_SUB_KEY, JSON.stringify(practiceSubmissions.value))
+    }
 
     const loading = ref<Record<string, boolean>>({})
 
@@ -441,6 +461,18 @@ export const useLmsStore = defineStore('lms', () => {
                     })
                 }
             }
+
+            for (const evaluation of res.data.evaluations) {
+                if (!getEvalResult(evaluation.moduleId)) {
+                    saveEvalResult(evaluation.moduleId, {
+                        score:        evaluation.score,
+                        passed:       evaluation.passed,
+                        passing_score: evaluation.passingScore,
+                        completed_at:  evaluation.completedAt,
+                        has_practice_exercise: evaluation.hasPracticeExercise,
+                    } as EvaluationResult)
+                }
+            }
         } catch (e) {
             console.warn('[LmsStore] Could not fetch remote progress:', e)
         } finally {
@@ -636,6 +668,93 @@ export const useLmsStore = defineStore('lms', () => {
         )
     }
 
+    // ─── Eval result cache ───────────────────────────────────────────────
+    function saveEvalResult(moduleId: number, result: EvaluationResult) {
+        evalResults.value[moduleId] = result
+        _persistEvalResults()
+    }
+
+    function getEvalResult(moduleId: number): EvaluationResult | null {
+        return evalResults.value[moduleId] ?? null
+    }
+
+    // ─── Practice submission cache ───────────────────────────────────────
+    async function submitPracticeFile(
+        evalId: number,
+        payload: { file_url: string; file_key: string; file_type: string; file_name?: string; module_id?: number }
+    ): Promise<PracticeSubmission | null> {
+        try {
+            const res = await apiRepository.post<PracticeSubmission>({
+                endpoint: `/academy/practice/${evalId}/submit`,
+                body: { ...payload, ...getPayloadBaseProgress() },
+            })
+            if (res?.data) {
+                practiceSubmissions.value[evalId] = res.data
+                _persistPracticeSubs()
+                return res.data
+            }
+            return null
+        } catch (e) {
+            console.warn('[LmsStore] submitPracticeFile failed:', e)
+            return null
+        }
+    }
+
+    async function fetchMyPracticeSubmission(evalId: number): Promise<PracticeSubmission | null> {
+        try {
+            const res = await apiRepository.get<PracticeSubmission | null>({
+                endpoint: `/academy/practice/${evalId}/my-submission`,
+                params: getPayloadBaseProgress(),
+            })
+            if (res?.data) {
+                practiceSubmissions.value[evalId] = res.data
+                _persistPracticeSubs()
+                return res.data
+            }
+            return null
+        } catch {
+            return null
+        }
+    }
+
+    function getPracticeSubmission(evalId: number): PracticeSubmission | null {
+        return practiceSubmissions.value[evalId] ?? null
+    }
+
+    /**
+     * Retorna true cuando el módulo está 100% completado incluyendo evaluación y práctica.
+     *
+     * Condiciones:
+     * 1. Todas las lecciones completadas
+     * 2. Si hay evaluación visible con preguntas → debe estar aprobada
+     * 3. Si la evaluación tiene practice_exercise → debe haber un archivo subido
+     */
+    function isModuleTrophyReady(
+        moduleId: number,
+        evaluation: ModuleEvaluation | null = null
+    ): boolean {
+        // 1. Lecciones completas
+        if (!isModuleCompleted(moduleId)) return false
+
+        // 2. Evaluación (si existe y es visible)
+        if (evaluation && evaluation.visible !== false) {
+            const hasQuestions = evaluation.questions && evaluation.questions.length > 0
+            
+            if (hasQuestions) {
+                const result = getEvalResult(moduleId)
+                if (!result?.passed) return false
+            }
+
+            // 3. Practice exercise — basta con que haya un archivo subido
+            if (evaluation.practice_exercise) {
+                const submission = getPracticeSubmission(evaluation.id)
+                if (!submission) return false
+            }
+        }
+
+        return true
+    }
+
     const getLessonStatus = (lessonId: number) => {
         const p = progress.value.find(pr => pr.lessonId === lessonId)
         if (!p) return 'not_started'
@@ -692,6 +811,20 @@ export const useLmsStore = defineStore('lms', () => {
         deleteEvaluation,
         submitEvaluation,
         getMyEvaluationResult,
+
+        // Eval result cache
+        saveEvalResult,
+        getEvalResult,
+        evalResults,
+
+        // Practice submission
+        submitPracticeFile,
+        fetchMyPracticeSubmission,
+        getPracticeSubmission,
+        practiceSubmissions,
+
+        // Trophy logic
+        isModuleTrophyReady,
 
         getModuleLessons,
         getPlatformModules,

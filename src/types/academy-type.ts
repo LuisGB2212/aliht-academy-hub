@@ -47,7 +47,6 @@ export interface Module {
     id: number
     name: string
     description?: string
-    practice_exercise?: string
     order: number
     visible: boolean
     folder_id?: number        // carpeta a la que pertenece
@@ -55,6 +54,7 @@ export interface Module {
     platform_ids?: number[]  // used when saving
     profile_ids?: number[]   // hardcoded profile IDs
     lessons?: Lesson[]       // nested content tree
+    evaluation?: ModuleEvaluation
     pivot?: {
         academy_lesson_id: number
         academy_module_id: number
@@ -121,7 +121,8 @@ export interface User {
 
 export interface AcademyUserProgress {
     lessons: { lessonId: number; moduleId: number; completed: boolean; lastViewedAt: string | null }[]
-    modules: { moduleId: number; completedAt: string }[]
+    modules: { moduleId: number; completedAt: string }[],
+    evaluations: {evaluationId: number, moduleId: number, score: number, passed: boolean, passingScore: number, hasPracticeExercise: boolean, completedAt: string}[]
 }
 
 export interface AcademyStatistics {
@@ -248,6 +249,21 @@ export interface EvaluationResult {
     passed: boolean
     passing_score: number
     completed_at: string
+    // Practice exercise context (set after submit if evaluation has practice_exercise)
+    has_practice_exercise?: boolean
+}
+
+// Submission de ejercicio práctico (archivo subido a S3)
+export type PracticeSubmissionStatus = 'pending' | 'approved' | 'rejected'
+
+export interface PracticeSubmission {
+    id: number
+    status: PracticeSubmissionStatus
+    file_url: string
+    file_type: string
+    file_name?: string
+    reviewer_note?: string
+    created_at: string
 }
 
 export interface EvaluationResultResponse {
