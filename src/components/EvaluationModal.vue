@@ -342,10 +342,6 @@ async function handlePracticeUpload() {
 
                             <!-- Footer -->
                             <div class="px-6 py-4 border-t border-border/50 bg-muted/10 shrink-0 flex items-center justify-end">
-                                <!-- <button @click="emit('skip')"
-                                    class="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                                    Omitir evaluación
-                                </button> -->
                                 <button @click="handleSubmit" :disabled="!allAnswered || submitting"
                                     class="flex items-center gap-2 px-6 py-2.5 rounded-xl gradient-bg text-primary-foreground text-sm font-bold shadow-md hover:scale-105 transition-all disabled:opacity-50 disabled:scale-100">
                                     <Loader2 v-if="submitting" class="w-4 h-4 animate-spin" />
@@ -440,6 +436,11 @@ async function handlePracticeUpload() {
                                             <AlertCircle class="w-3.5 h-3.5 shrink-0" />
                                             {{ practiceError }}
                                         </div>
+
+                                        <button @click="emit('skip')"
+                                            class="text-sm text-red-500 hover:text-destructive transition-colors">
+                                            Omitir ejercicio practico
+                                        </button>
 
                                         <!-- Upload button -->
                                         <button v-if="practiceFile" @click="handlePracticeUpload"
