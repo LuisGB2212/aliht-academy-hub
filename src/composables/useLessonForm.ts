@@ -6,15 +6,8 @@
  */
 import { ref, computed } from 'vue'
 import { useLmsStore } from '@/stores/aliht-context-store'
-import type { Lesson, LessonPlatformContent, ContentType } from '@/types/academy-type'
+import type { Lesson, LessonPlatformContent, ContentType, PlatformContentUploadState } from '@/types/academy-type'
 import { uploadAcademyFile, getAcceptString } from '@/utils/uploadUtils'
-
-// ─── Upload state per platform content slot ───────────────────────────────────
-export interface PlatformContentUploadState {
-  isUploading: boolean
-  progress: number
-  error: string | null
-}
 
 export function useLessonForm() {
   const store = useLmsStore()

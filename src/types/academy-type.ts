@@ -3,9 +3,16 @@
 export type ContentType = 'video' | 'pdf' | 'image' | 'link' | 'text'
 
 /** Upload category sent to the pre-signed URL endpoint */
-export type UploadCategory = 'video' | 'pdf' | 'image'
+export type UploadCategory = 'video' | 'pdf' | 'image' | 'practice'
 
 export type LessonStatus = 'completed' | 'in_progress' | 'locked' | 'not_started'
+
+// ─── Upload state per platform content slot ───────────────────────────────────
+export interface PlatformContentUploadState {
+  isUploading: boolean
+  progress: number
+  error: string | null
+}
 
 // ─── Typed content value stored in DB ────────────────────────────────────────
 

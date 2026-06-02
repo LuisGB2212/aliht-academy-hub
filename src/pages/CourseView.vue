@@ -3,7 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useLmsStore } from '@/stores/aliht-context-store'
 import { useAuthStore } from '@/stores/auth'
-import type { ModuleEvaluation, AcademyFolder } from '@/types/academy-type'
+import type { AcademyFolder, PlatformContentUploadState } from '@/types/academy-type'
 import {
     CheckCircle2, Circle, PlayCircle, FileText,
     Link as LinkIcon, Type, ChevronDown, ArrowRight,
@@ -12,7 +12,7 @@ import {
     AlertCircle
 } from 'lucide-vue-next'
 import EvaluationModal from '@/components/EvaluationModal.vue'
-import { apiRepository } from '@/utils/apiRepository'
+import { uploadAcademyFile } from '@/utils/uploadUtils'
 
 const route  = useRoute()
 const router = useRouter()
@@ -82,11 +82,11 @@ const currentFolder = computed((): AcademyFolder | { id: number; name: string } 
 // ─── Module accordion ──────────────────────────────────────────────────────
 const openModules = ref<Set<number>>(new Set())
 
-watch(currentFolderModules, (mods) => {
-    if (openModules.value.size === 0 && mods.length > 0) {
-        openModules.value = new Set(mods.map(m => m.id))
-    }
-}, { immediate: true })
+// watch(currentFolderModules, (mods) => {
+//     if (openModules.value.size === 0 && mods.length > 0) {
+//         openModules.value = new Set(mods.map(m => m.id))
+//     }
+// }, { immediate: true })
 
 function toggleModule(modId: number) {
     const next = new Set(openModules.value)
@@ -98,24 +98,6 @@ function toggleModule(modId: number) {
 const contentIcons: Record<string, any> = {
     video: PlayCircle, pdf: FileText, link: LinkIcon, text: Type,
 }
-
-// Load evals for all modules in current folder
-watch(currentFolderModules, async (mods) => {
-    for (const m of mods) {
-        if (store.isModuleCompleted(m.id)) {
-            // await loadEval(m.id)
-        }
-    }
-}, { immediate: true })
-
-// Also load evals when a module becomes completed
-watch(() => store.progress, async () => {
-    for (const m of currentFolderModules.value) {
-        if (store.isModuleCompleted(m.id) && !(m.id in (store.getEvalResult(m.id) ?? []))) {
-            // await loadEval(m.id)
-        }
-    }
-}, { deep: true })
 
 
 // ─── Trophy ────────────────────────────────────────────────────────────────
@@ -163,18 +145,12 @@ async function onEvalPassed() {
     // await loadEval(moduleId)
 }
 
+const ACCEPTED_EXTENSIONS = '.jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.mp4,.mov,.webm'
+
 // ─── Inline Practice Upload ────────────────────────────────────────────────
 const practiceFile    = ref<Record<number, File | null>>({})
-const practiceUploading = ref<Record<number, boolean>>({})
 const practiceError   = ref<Record<number, string>>({})
-
-const ACCEPTED_EXTENSIONS = '.jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.mp4,.mov,.webm'
-const ACCEPTED_TYPES = [
-    'image/jpeg','image/png','image/webp','image/gif','application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'video/mp4','video/quicktime','video/webm',
-]
+const uploadStates = ref<Record<number, PlatformContentUploadState>>({})
 
 function onPracticeFileSelected(moduleId: number, e: Event) {
     const f = (e.target as HTMLInputElement).files?.[0] ?? null
@@ -187,42 +163,25 @@ async function handlePracticeUpload(moduleId: number) {
     const file = practiceFile.value[moduleId]
     if (!ev || !file) return
 
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-        practiceError.value[moduleId] = 'Tipo de archivo no permitido.'
-        return
-    }
-    if (file.size > 300 * 1024 * 1024) {
-        practiceError.value[moduleId] = 'El archivo supera los 300 MB.'
-        return
-    }
-
-    practiceUploading.value[moduleId] = true
     practiceError.value[moduleId] = ''
 
     try {
-        const presignRes = await apiRepository.post<{ upload_url: string; public_url: string; key: string }>({
-            endpoint: '/academy/upload/presigned-url',
-            body: { file_name: file.name, file_type: file.type, upload_type: 'practice' },
+        const { publicUrl, key } = await uploadAcademyFile(file, 'practice', (progress) => {
+            uploadStates.value[moduleId] = { ...uploadStates.value[moduleId], progress }
         })
-        if (!presignRes?.data?.upload_url) {
-            practiceError.value[moduleId] = 'No se pudo obtener la URL de subida.'
-            return
-        }
-        const { upload_url, public_url, key } = presignRes.data
-
-        const s3 = await fetch(upload_url, {
-            method: 'PUT', headers: { 'Content-Type': file.type }, body: file,
-        })
-        if (!s3.ok) { practiceError.value[moduleId] = 'Error al subir el archivo.'; return }
 
         await store.submitPracticeFile(ev.id, {
-            file_url: public_url, file_key: key, file_type: file.type,
+            file_url: publicUrl, file_key: key, file_type: file.type,
             file_name: file.name, module_id: moduleId,
         })
-    } catch {
-        practiceError.value[moduleId] = 'Error inesperado. Intenta de nuevo.'
+
+        store.syncProgressFromApi();
+        
+    } catch (error: any) {
+        console.error(error)
+        practiceError.value[moduleId] = (error instanceof Error) ? error.message : 'Error inesperado. Intenta de nuevo.'
     } finally {
-        practiceUploading.value[moduleId] = false
+        uploadStates.value[moduleId].isUploading = false
     }
 }
 
@@ -448,7 +407,7 @@ onMounted(async () => {
                                     <span class="text-xs font-semibold" :class="practiceFile[mod.id] ? 'text-foreground' : 'text-muted-foreground'">
                                         {{ practiceFile[mod.id] ? practiceFile[mod.id]!.name : 'Seleccionar archivo' }}
                                     </span>
-                                    <span class="text-[10px] text-muted-foreground/70">Imagen, PDF, Word, Video — máx. 300 MB</span>
+                                    <span class="text-[10px] text-muted-foreground/70">Imagen, PDF, Word, Video — máx. 30 MB</span>
                                     <input type="file" class="hidden" :accept="ACCEPTED_EXTENSIONS" @change="(e) => onPracticeFileSelected(mod.id, e)" />
                                 </label>
 
@@ -456,12 +415,29 @@ onMounted(async () => {
                                     <AlertCircle class="w-3.5 h-3.5 shrink-0" /> {{ practiceError[mod.id] }}
                                 </div>
 
+                                <!-- Uploading state -->
+                                <template v-if="uploadStates[mod.id]?.isUploading">
+                                    <Loader2 class="w-4 h-4 text-primary animate-spin shrink-0" />
+                                    <div class="flex-1">
+                                        <div
+                                            class="flex justify-between text-[10px] text-muted-foreground mb-1">
+                                            <span>Subiendo archivo...</span>
+                                            <span class="font-bold text-primary">{{
+                                                uploadStates[mod.id].progress }}%</span>
+                                        </div>
+                                        <div class="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+                                            <div class="h-full bg-primary rounded-full transition-all duration-300"
+                                                :style="`width: ${uploadStates[mod.id].progress}%`" />
+                                        </div>
+                                    </div>
+                                </template>
+
                                 <button v-if="practiceFile[mod.id]" @click.stop="handlePracticeUpload(mod.id)"
-                                    :disabled="practiceUploading[mod.id]"
+                                    :disabled="uploadStates[mod.id]?.isUploading"
                                     class="w-full mt-3 gradient-bg text-primary-foreground text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] transition-all disabled:opacity-50">
-                                    <Loader2 v-if="practiceUploading[mod.id]" class="w-4 h-4 animate-spin" />
+                                    <Loader2 v-if="uploadStates[mod.id]?.isUploading" class="w-4 h-4 animate-spin" />
                                     <Upload v-else class="w-4 h-4" />
-                                    {{ practiceUploading[mod.id] ? 'Subiendo...' : 'Entregar ejercicio' }}
+                                    {{ uploadStates[mod.id]?.isUploading ? 'Subiendo...' : 'Entregar ejercicio' }}
                                 </button>
                             </div>
                         </template>

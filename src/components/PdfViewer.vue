@@ -71,10 +71,14 @@ async function loadPdf(src: string) {
 async function renderAllPages() {
     if (!pdfDoc || !containerRef.value) return
     
-    // const scrollTopBefore = containerRef.value.scrollTop
+    // ── Guardar scroll relativo (% del total) antes de destruir ──
+    const container = containerRef.value
+    const scrollRatio = container.scrollHeight > 0
+        ? container.scrollTop / container.scrollHeight
+        : 0
+
     // containerRef.value.innerHTML = ''
     let containerRefTemp = [];
-
     const outputScale = window.devicePixelRatio || 1
     // Ancho base del contenedor menos paddings internos
     // const containerWidth = (containerRef.value.clientWidth || 800) 
@@ -174,44 +178,48 @@ async function renderAllPages() {
             continue
         }
     }
-    containerRef.value.innerHTML = '';
-    containerRef.value.append(...containerRefTemp);
-    // if (scrollTopBefore > 0) {
-    //     containerRef.value.scrollTop = scrollTopBefore
-    // }
+
+    // ── Reemplazar DOM y restaurar scroll ──
+    container.innerHTML = ''
+    container.append(...containerRefTemp)
+
+    await nextTick()
+
+    // Restaurar posición proporcional al nuevo scrollHeight
+    container.scrollTop = scrollRatio * container.scrollHeight
 }
 
 // ─── Funcionalidades de Control ────────────────────────────────────────────────
 
 // Cambiar de escala (Zoom)
 async function changeZoom(modifier: number) {
-    // Guardamos la página en la que está parado el usuario actualmente antes del cambio
-    // const pageToRestore = currentPage.value
+    // 1. Guardar página visible actual ANTES del zoom
+    const pageToRestore = currentPage.value
 
     if (modifier === 0) {
         zoomLevel.value = 1.0
     } else {
-        const nextZoom = zoomLevel.value + modifier
+        const nextZoom = parseFloat((zoomLevel.value + modifier).toFixed(1))
         if (nextZoom >= 0.5 && nextZoom <= 3.0) {
-            zoomLevel.value = parseFloat(nextZoom.toFixed(1))
+            zoomLevel.value = nextZoom
         }
     }
-    
-    // // Pausamos temporalmente el Observer para evitar eventos cruzados durante el rediseño
-    // observer?.disconnect()
 
-    // // Renderizamos las páginas con la nueva escala
+    // 2. Pausar observer durante el re-render
+    observer?.disconnect()
+
+    // 3. Re-renderizar con nuevo zoom
     await renderAllPages()
 
-    // // Forzamos al contenedor a regresar a la página guardada al instante
-    // await nextTick()
-    // const el = document.getElementById(`pdf-page-${pageToRestore}`)
-    // if (el) {
-    //     el.scrollIntoView({ behavior: 'auto', block: 'start' })
-    // }
+    // 4. Ir a la página donde estaba el usuario
+    await nextTick()
+    const el = document.getElementById(`pdf-page-${pageToRestore}`)
+    if (el) {
+        el.scrollIntoView({ behavior: 'auto', block: 'start' })
+    }
 
-    // // Reactivamos el Observer para que siga detectando el scroll del usuario
-    // setupObserver()
+    // 5. Reactivar observer
+    setupObserver()
 }
 
 // Navegar a página específica
@@ -252,19 +260,22 @@ function setupObserver() {
 
     observer = new IntersectionObserver(
         (entries) => {
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) return
-                const pageNum = parseInt((entry.target as HTMLElement).dataset.page || '1')
-                currentPage.value = pageNum
-                targetPage.value = pageNum
-                
-                if (pageNum === totalPages.value && !lastPageRead.value) {
-                    lastPageRead.value = true
-                    emit('read')
-                }
-            })
+            let mostVisible = entries
+                .filter(e => e.isIntersecting)
+                .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+
+            if (!mostVisible) return
+
+            const pageNum = parseInt((mostVisible.target as HTMLElement).dataset.page || '1')
+            currentPage.value = pageNum
+            targetPage.value = pageNum
+
+            if (pageNum === totalPages.value && !lastPageRead.value) {
+                lastPageRead.value = true
+                emit('read')
+            }
         },
-        { root: containerRef.value, threshold: 0.5 }
+        { root: containerRef.value, threshold: 0.3, rootMargin: '0px' }
     )
 
     containerRef.value.querySelectorAll('[data-page]').forEach(el => observer!.observe(el))

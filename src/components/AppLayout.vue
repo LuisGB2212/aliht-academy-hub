@@ -35,8 +35,10 @@ authStore.init();
         </main>
         
         <!-- Optional Footer Placeholder -->
-        <footer class="fixed bottom-8 left-0 w-full text-center text-xs text-muted-foreground/40 font-medium uppercase tracking-[0.15em]">
-            &copy; 2026 Academia Aliht Corporativo • Base de conocimiento
+        <footer class="fixed bottom-2 left-0 w-full text-center text-xs text-muted-foreground/40 font-medium uppercase tracking-[0.15em]">
+            <div class="bg-primary w-fit rounded-t-xl mx-auto px-3 py-2 backdrop-blur-md text-white">
+                &copy; 2026 Academia Aliht Corporativo • Base de conocimiento
+            </div>
         </footer>
     </div>
 </template>

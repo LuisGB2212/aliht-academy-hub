@@ -22,6 +22,7 @@ export const MAX_FILE_SIZES: Record<UploadCategory, number> = {
     video: 500 * 1024 * 1024,  // 500 MB
     pdf: 50 * 1024 * 1024,  //  50 MB
     image: 5 * 1024 * 1024,  //   5 MB
+    practice: 30 * 1024 * 1024,  //  30 MB
 }
 
 // ─── Accepted MIME types per category ────────────────────────────────────────
@@ -29,6 +30,10 @@ export const ACCEPTED_MIME_TYPES: Record<UploadCategory, string[]> = {
     video: ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo'],
     pdf: ['application/pdf'],
     image: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+    practice: ['image/jpeg','image/png','image/webp','image/gif','application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'video/mp4','video/quicktime','video/webm'],
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
