@@ -168,7 +168,6 @@ async function handlePracticeUpload() {
 
     try {
         // 1. Get presigned URL
-        const authStore = (await import('@/stores/auth')).useAuthStore()
         const { apiRepository } = await import('@/utils/apiRepository')
 
         const presignRes = await apiRepository.post<{
