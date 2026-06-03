@@ -129,7 +129,7 @@ export interface User {
 export interface AcademyUserProgress {
     lessons: { lessonId: number; moduleId: number; completed: boolean; lastViewedAt: string | null }[]
     modules: { moduleId: number; completedAt: string }[],
-    evaluations: {evaluationId: number, moduleId: number, score: number, passed: boolean, passingScore: number, hasPracticeExercise: boolean, completedAt: string}[]
+    evaluations: {evaluationId: number, moduleId: number, score: number, passed: boolean, passingScore: number, hasPracticeExercise: boolean, practice_submission?: PracticeSubmission, completedAt: string}[]
 }
 
 export interface AcademyStatistics {
@@ -271,6 +271,12 @@ export interface PracticeSubmission {
     file_name?: string
     reviewer_note?: string
     created_at: string
+    review_metadata?: {
+        user_id?: number;
+        user_name?: string;
+        agency_id?: number;
+        score?: number;
+    }
 }
 
 export interface EvaluationResultResponse {
@@ -284,5 +290,5 @@ export interface EvaluationResultResponse {
     user_name: string
     user_email: string
     answers?: Record<string, string[]>,
-    evaluation?: ModuleEvaluation
+    evaluation?: ModuleEvaluation,
 }

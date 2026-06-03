@@ -207,15 +207,22 @@ const evalData = ref<Partial<ModuleEvaluation>>({
 })
 const evalIsNew = ref(true)
 const evalId    = ref<number | null>(null)
+const maxScore  = ref<number>(100)
 
 // ─── Weight preview ────────────────────────────────────────────────────────
 const weightPreview = computed(() => {
     const questions = evalData.value.questions ?? []
     if (!questions.length) return []
 
+    if(evalData.value.practice_exercise) {
+        maxScore.value = 50
+    } else {
+        maxScore.value = 100
+    }
+
     const explicit = questions.filter(q => q.weight != null && q.weight > 0)
     const assigned = explicit.reduce((s, q) => s + (q.weight ?? 0), 0)
-    const remaining = Math.max(0, 100 - assigned)
+    const remaining = Math.max(0, maxScore.value - assigned)
     const autoCount = questions.length - explicit.length
     const autoWeight = autoCount > 0 ? remaining / autoCount : 0
 
@@ -340,8 +347,8 @@ async function handleEvalSave() {
     const explicitTotal = questions
         .filter(q => q.weight != null && q.weight > 0)
         .reduce((s, q) => s + (q.weight ?? 0), 0)
-    if (explicitTotal > 100) {
-        alert(`La suma de pesos explícitos (${explicitTotal}%) supera el 100%. Ajústalos antes de guardar.`)
+    if (explicitTotal > maxScore.value) {
+        alert(`La suma de pesos explícitos (${explicitTotal}%) supera el ${maxScore.value}%. Ajústalos antes de guardar.`)
         return
     }
 
@@ -698,9 +705,9 @@ watch(() => props.folderId, () => {
                                 <!-- Weight distribution preview -->
                                 <div v-if="(evalData.questions ?? []).length > 0"
                                     class="flex flex-wrap items-center gap-2 p-3 rounded-xl border"
-                                    :class="Math.abs(weightTotal - 100) > 0.5 ? 'bg-destructive/5 border-destructive/20' : 'bg-success/5 border-success/20'">
+                                    :class="Math.abs(weightTotal - maxScore) > 0.5 ? 'bg-destructive/5 border-destructive/20' : 'bg-success/5 border-success/20'">
                                     <span class="text-[10px] font-bold uppercase tracking-wider"
-                                        :class="Math.abs(weightTotal - 100) > 0.5 ? 'text-destructive' : 'text-success'">
+                                        :class="Math.abs(weightTotal - maxScore) > 0.5 ? 'text-destructive' : 'text-success'">
                                         Distribución de pesos:
                                     </span>
                                     <span v-for="(w, wi) in weightPreview" :key="w.id"
@@ -711,7 +718,7 @@ watch(() => props.folderId, () => {
                                         P{{ wi + 1 }}: {{ w.weight.toFixed(1) }}%{{ w.isAuto ? ' (auto)' : '' }}
                                     </span>
                                     <span class="ml-auto text-[10px] font-bold"
-                                        :class="Math.abs(weightTotal - 100) > 0.5 ? 'text-destructive' : 'text-success'">
+                                        :class="Math.abs(weightTotal - maxScore) > 0.5 ? 'text-destructive' : 'text-success'">
                                         Total: {{ weightTotal.toFixed(1) }}%
                                     </span>
                                 </div>

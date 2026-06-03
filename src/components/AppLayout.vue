@@ -23,7 +23,7 @@ authStore.init();
         <main class="w-full transition-all duration-500 mx-auto" v-if="authStore.isAuthenticated && !authStore.loading">
             <slot />
         </main>
-        <main class="w-full transition-all duration-500 mx-auto" v-else-if="!authStore.isAuthenticated && !authStore.loading">
+        <main class="w-full transition-all duration-500 mx-auto pb-6" v-else-if="!authStore.isAuthenticated && !authStore.loading">
             <!-- Pagina no tiene acceso a esta seccion -->
             <div class="flex items-center justify-center h-screen">
                 <div class="text-center">
@@ -35,7 +35,7 @@ authStore.init();
         </main>
         
         <!-- Optional Footer Placeholder -->
-        <footer class="fixed bottom-2 left-0 w-full text-center text-xs text-muted-foreground/40 font-medium uppercase tracking-[0.15em]">
+        <footer class="fixed bottom-0 left-0 w-full text-center text-xs text-muted-foreground/40 font-medium uppercase tracking-[0.15em]">
             <div class="bg-primary w-fit rounded-t-xl mx-auto px-3 py-2 backdrop-blur-md text-white">
                 &copy; 2026 Academia Aliht Corporativo • Base de conocimiento
             </div>

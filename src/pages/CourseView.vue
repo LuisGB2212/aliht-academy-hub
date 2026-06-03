@@ -106,14 +106,15 @@ function isTrophyReady(moduleId: number): boolean {
 }
 
 // ─── Module state machine ──────────────────────────────────────────────────
-type ModuleState = 'lessons' | 'needs_eval' | 'needs_practice' | 'complete'
+type ModuleState = 'lessons' | 'needs_eval' | 'needs_practice' | 'needs_review' | 'complete'
 
 function getModuleState(moduleId: number): ModuleState {
     if (!store.isModuleCompleted(moduleId)) return 'lessons'
     const ev = store.modules.find((m: any) => m.id === moduleId)?.evaluation
+
     
     if (!ev || ev.visible === false) return 'complete'
-
+    
     const hasQuestions = ev.questions && ev.questions.length > 0
     const result = store.getEvalResult(moduleId)
 
@@ -122,6 +123,7 @@ function getModuleState(moduleId: number): ModuleState {
     if (ev.practice_exercise) {
         const sub = store.getPracticeSubmission(ev.id)
         if (!sub) return 'needs_practice'
+        if(sub.status !== 'approved') return 'needs_review'
     }
     return 'complete'
 }
@@ -139,10 +141,8 @@ function closeEval() {
     activeEvalModuleId.value = null
 }
 async function onEvalPassed() {
-    const moduleId = activeEvalModuleId.value!
     closeEval()
-    // Reload eval to get fresh data, re-check state
-    // await loadEval(moduleId)
+    store.syncProgressFromApi();
 }
 
 const ACCEPTED_EXTENSIONS = '.jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.mp4,.mov,.webm'
@@ -318,9 +318,14 @@ onMounted(async () => {
                                 <h3 class="font-semibold text-foreground text-sm md:text-base uppercase tracking-tight">{{ mod.name }}</h3>
                                 <!-- Trophy -->
                                 <Transition name="trophy-pop">
-                                    <span v-if="isTrophyReady(mod.id)" class="inline-flex items-center text-amber-500" title="¡Módulo completado!">
-                                        <Trophy class="w-4 h-4 fill-amber-400 text-amber-500" />
-                                    </span>
+                                    <div>
+                                        <span v-if="isTrophyReady(mod.id) && getModuleState(mod.id) === 'needs_review'" class="inline-flex items-center text-orange-500 text-sm" title="¡Módulo en revisión!">
+                                            <AlertCircle class="w-4 h-4 text-orange-500 mr-2" /> Enviado para revisión
+                                        </span>
+                                        <span v-if="isTrophyReady(mod.id) && getModuleState(mod.id) === 'complete'" class="inline-flex items-center text-amber-500" title="¡Módulo completado!">
+                                            <Trophy class="w-4 h-4 fill-amber-400 text-amber-500" /> {{ store.getEvalResult(mod.id)?.score }}% / 100%
+                                        </span>
+                                    </div>
                                 </Transition>
                             </div>
                             <p class="text-xs text-muted-foreground mt-1">
@@ -442,8 +447,18 @@ onMounted(async () => {
                             </div>
                         </template>
 
+                        <template v-else-if="getModuleState(mod.id) === 'needs_review'">
+                            <div class="p-5 flex items-center gap-3 bg-amber-500/5 border-t border-amber-500/20">
+                                <AlertCircle class="w-8 h-8 text-amber-400 shrink-0" />
+                                <div>
+                                    <p class="text-sm font-bold text-amber-600">En Revisión</p>
+                                    <p class="text-xs text-muted-foreground">Has entregado el ejercicio y está pendiente de revisión.</p>
+                                </div>
+                            </div>
+                        </template>
+
                         <!-- ④ Complete → trofeo ganado -->
-                        <template v-else>
+                        <template v-else-if="getModuleState(mod.id) === 'complete'">
                             <div class="p-5 flex items-center gap-3 bg-amber-500/5 border-t border-amber-500/20">
                                 <Trophy class="w-8 h-8 text-amber-400 fill-amber-300 shrink-0" />
                                 <div>

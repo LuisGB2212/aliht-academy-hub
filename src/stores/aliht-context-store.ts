@@ -463,14 +463,17 @@ export const useLmsStore = defineStore('lms', () => {
             }
 
             for (const evaluation of res.data.evaluations) {
-                if (!getEvalResult(evaluation.moduleId)) {
-                    saveEvalResult(evaluation.moduleId, {
-                        score:        evaluation.score,
-                        passed:       evaluation.passed,
-                        passing_score: evaluation.passingScore,
-                        completed_at:  evaluation.completedAt,
-                        has_practice_exercise: evaluation.hasPracticeExercise,
-                    } as EvaluationResult)
+                saveEvalResult(evaluation.moduleId, {
+                    score:        evaluation.score,
+                    passed:       evaluation.passed,
+                    passing_score: evaluation.passingScore,
+                    completed_at:  evaluation.completedAt,
+                    has_practice_exercise: evaluation.hasPracticeExercise,
+                } as EvaluationResult)
+
+                if(evaluation.practice_submission) {
+                    practiceSubmissions.value[evaluation.evaluationId] = evaluation.practice_submission
+                    _persistPracticeSubs()
                 }
             }
         } catch (e) {
@@ -592,18 +595,6 @@ export const useLmsStore = defineStore('lms', () => {
         }
     }
 
-    async function getMyEvaluationResult(evalId: number): Promise<EvaluationResult | null> {
-        try {
-            const res = await apiRepository.get<EvaluationResult | null>({
-                endpoint: `/academy/evaluations/${evalId}/my-result`,
-                params: getPayloadBaseProgress(),
-            })
-            return res?.data ?? null
-        } catch {
-            return null
-        }
-    }
-
     // ─── Getters ───────────────────────────────────────────────────────────────
     const getModuleLessons = (moduleId: number): Lesson[] =>
         lessons.value
@@ -696,23 +687,6 @@ export const useLmsStore = defineStore('lms', () => {
             return null
         } catch (e) {
             console.warn('[LmsStore] submitPracticeFile failed:', e)
-            return null
-        }
-    }
-
-    async function fetchMyPracticeSubmission(evalId: number): Promise<PracticeSubmission | null> {
-        try {
-            const res = await apiRepository.get<PracticeSubmission | null>({
-                endpoint: `/academy/practice/${evalId}/my-submission`,
-                params: getPayloadBaseProgress(),
-            })
-            if (res?.data) {
-                practiceSubmissions.value[evalId] = res.data
-                _persistPracticeSubs()
-                return res.data
-            }
-            return null
-        } catch {
             return null
         }
     }
@@ -810,7 +784,6 @@ export const useLmsStore = defineStore('lms', () => {
         updateEvaluation,
         deleteEvaluation,
         submitEvaluation,
-        getMyEvaluationResult,
 
         // Eval result cache
         saveEvalResult,
@@ -819,7 +792,6 @@ export const useLmsStore = defineStore('lms', () => {
 
         // Practice submission
         submitPracticeFile,
-        fetchMyPracticeSubmission,
         getPracticeSubmission,
         practiceSubmissions,
 
