@@ -803,5 +803,6 @@ export const useLmsStore = defineStore('lms', () => {
         getCourseProgress,
         getLessonStatus,
         isModuleCompleted,
+        getPayloadBaseProgress,
     }
 })

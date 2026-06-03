@@ -3,6 +3,9 @@ import { ref, onMounted, computed } from 'vue'
 import { apiRepository } from '@/utils/apiRepository'
 import { Loader2, Users, Trophy, BookOpen, Layers, Search, RefreshCw, FileText, CheckCircle2, XCircle, X } from 'lucide-vue-next'
 import { AcademyPlatformStatistics, EvaluationResultResponse, TopUserStat } from '@/types/academy-type'
+import { useLmsStore } from '@/stores/aliht-context-store'
+
+const store = useLmsStore()
 
 const stats = ref<AcademyPlatformStatistics | null>(null)
 const loading = ref(true)
@@ -30,8 +33,9 @@ async function openEvalResults(user: TopUserStat) {
     showEvalModal.value = true
     evalModalLoading.value = true
     try {
-        const res = await apiRepository.get<any[]>({
+        const res = await apiRepository.get<EvaluationResultResponse[]>({
             endpoint: `/academy/evaluations/${user.evaluation_id}/results`,
+            params: store.getPayloadBaseProgress()
         })
         if (res?.success) {
             evalModalResults.value = res.data
@@ -675,10 +679,10 @@ const filteredLessons = computed(() => {
                                                             <div>
                                                                 <p class="text-sm font-semibold text-foreground leading-tight">
                                                                     {{ result.user_name }}
-                                                                    <span v-if="result.user_id === evalModalUser?.user_id"
+                                                                    <!-- <span v-if="result.user_id === evalModalUser?.user_id"
                                                                         class="ml-1 text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold uppercase">
                                                                         seleccionado
-                                                                    </span>
+                                                                    </span> -->
                                                                 </p>
                                                                 <p class="text-[10px] text-muted-foreground">{{ result.user_email }}</p>
                                                             </div>
