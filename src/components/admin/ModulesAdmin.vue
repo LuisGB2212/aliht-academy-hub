@@ -10,6 +10,7 @@ import {
 } from 'lucide-vue-next'
 import Modal from '@/components/ui/Modal.vue'
 import Sortable from 'sortablejs'
+import AreaScroll from '../ui/AreaScroll.vue'
 
 const props = defineProps<{
     folderId: number | null
@@ -672,7 +673,7 @@ watch(() => props.folderId, () => {
                         </div>
 
                         <!-- Body -->
-                        <div class="overflow-y-auto flex-1 p-6 space-y-5">
+                        <AreaScroll class="p-6 space-y-5">
                             <div v-if="evalLoading" class="flex items-center justify-center py-12">
                                 <Loader2 class="w-6 h-6 animate-spin text-primary" />
                             </div>
@@ -838,7 +839,7 @@ watch(() => props.folderId, () => {
                                     <span class="text-xs text-muted-foreground">Si está inactiva no se mostrará al finalizar el módulo.</span>
                                 </div>
                             </template>
-                        </div>
+                        </AreaScroll>
 
                         <!-- Footer -->
                         <div class="flex items-center justify-between px-6 py-4 border-t border-border/50 bg-muted/10 shrink-0">

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, nextTick, ref } from 'vue'
 import { useLmsStore } from '@/stores/aliht-context-store'
-import { useLessonForm } from '@/composables/useLessonForm'
+import { useLessonForm } from '@/composables/use-lesson-form'
 import type { ContentType } from '@/types/academy-type'
 import {
     Plus, Edit, Trash2, Eye, EyeOff, GripVertical, Loader2,
@@ -164,7 +164,7 @@ onMounted(async () => {
 
         <!-- ─── Create / Edit Modal ─────────────────────────────────────────────── -->
         <Modal :show="showModal" :title="isNew ? 'Nuevo Tutorial' : 'Editar Tutorial'" @close="showModal = false">
-            <div class="space-y-8 max-h-[70vh] overflow-y-auto px-1 scrollbar-thin">
+            <div class="space-y-8 max-h-[70vh] px-1 scrollbar-thin">
 
                 <!-- Basic Info -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

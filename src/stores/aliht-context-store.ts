@@ -25,6 +25,7 @@ import type {
 } from '@/types/academy-type'
 import { apiRepository } from '@/utils/apiRepository'
 import { useAuthStore } from '@/stores/auth'
+import { toast } from 'vue3-toastify'
 
 const PROGRESS_KEY          = 'aliht-lms-progress'
 const EVAL_RESULTS_KEY      = 'aliht-lms-eval-results'      // { [moduleId]: EvaluationResult }
@@ -209,7 +210,10 @@ export const useLmsStore = defineStore('lms', () => {
         return handleRequest<AcademyFolder>(
             'createFolder',
             () => apiRepository.post({ endpoint: '/academy/folders', body: data }),
-            res => { folders.value = upsertItem(folders.value, res) },
+            res => { 
+                folders.value = upsertItem(folders.value, res)
+                toast.success('Carpeta creada exitosamente');
+            },
             true
         )
     }
@@ -218,7 +222,10 @@ export const useLmsStore = defineStore('lms', () => {
         return handleRequest<AcademyFolder>(
             'updateFolder',
             () => apiRepository.put({ endpoint: `/academy/folders/${id}`, body: data }),
-            res => { folders.value = upsertItem(folders.value, res) },
+            res => { 
+                folders.value = upsertItem(folders.value, res)
+                toast.success('Carpeta actualizada exitosamente'); 
+            },
             true
         )
     }
@@ -227,7 +234,10 @@ export const useLmsStore = defineStore('lms', () => {
         return handleRequest<void>(
             'deleteFolder',
             () => apiRepository.delete({ endpoint: `/academy/folders/${id}` }),
-            () => { folders.value = removeItem(folders.value, id) },
+            () => { 
+                folders.value = removeItem(folders.value, id)
+                toast.success('Carpeta eliminada exitosamente');
+            },
             true
         )
     }
@@ -241,6 +251,7 @@ export const useLmsStore = defineStore('lms', () => {
                     const f = folders.value.find(x => x.id === o.id)
                     if (f) f.order = o.order
                 })
+                toast.success('Orden de carpetas actualizado exitosamente');
             },
             true
         )
@@ -266,6 +277,7 @@ export const useLmsStore = defineStore('lms', () => {
             () => apiRepository.post({ endpoint: '/academy/platforms', body: data }),
             res => {
                 platforms.value = upsertItem(platforms.value, res)
+                toast.success('Plataforma creada exitosamente');
             },
             true
         )
@@ -277,6 +289,7 @@ export const useLmsStore = defineStore('lms', () => {
             () => apiRepository.put({ endpoint: `/academy/platforms/${id}`, body: data }),
             res => {
                 platforms.value = upsertItem(platforms.value, res)
+                toast.success('Plataforma actualizada exitosamente');
             },
             true
         )
@@ -288,6 +301,7 @@ export const useLmsStore = defineStore('lms', () => {
             () => apiRepository.delete({ endpoint: `/academy/platforms/${id}` }),
             () => {
                 platforms.value = removeItem(platforms.value, id)
+                toast.success('Plataforma eliminada exitosamente');
             },
             true
         )
@@ -300,6 +314,7 @@ export const useLmsStore = defineStore('lms', () => {
             () => apiRepository.post({ endpoint: '/academy/modules', body: data }),
             res => {
                 modules.value = upsertItem(modules.value, res)
+                toast.success('Módulo creado exitosamente');
             },
             true
         )
@@ -311,6 +326,7 @@ export const useLmsStore = defineStore('lms', () => {
             () => apiRepository.put({ endpoint: `/academy/modules/${id}`, body: data }),
             res => {
                 modules.value = upsertItem(modules.value, res)
+                toast.success('Módulo actualizado exitosamente');
             },
             true
         )
@@ -322,6 +338,7 @@ export const useLmsStore = defineStore('lms', () => {
             () => apiRepository.delete({ endpoint: `/academy/modules/${id}` }),
             () => {
                 modules.value = removeItem(modules.value, id)
+                toast.success('Módulo eliminado exitosamente');
             },
             true
         )
@@ -334,6 +351,7 @@ export const useLmsStore = defineStore('lms', () => {
             () => apiRepository.post({ endpoint: '/academy/lessons', body: data }),
             res => {
                 lessons.value = upsertItem(lessons.value, res)
+                toast.success('Lección creada exitosamente');
             },
             true
         )
@@ -345,6 +363,7 @@ export const useLmsStore = defineStore('lms', () => {
             () => apiRepository.put({ endpoint: `/academy/lessons/${id}`, body: data }),
             res => {
                 lessons.value = upsertItem(lessons.value, res)
+                toast.success('Lección actualizada exitosamente');
             },
             true
         )
@@ -356,6 +375,7 @@ export const useLmsStore = defineStore('lms', () => {
             () => apiRepository.delete({ endpoint: `/academy/lessons/${id}` }),
             () => {
                 lessons.value = removeItem(lessons.value, id)
+                toast.success('Lección eliminada exitosamente');
             },
             true
         )
@@ -375,6 +395,7 @@ export const useLmsStore = defineStore('lms', () => {
                     const mod = modules.value.find(m => m.id === o.id)
                     if (mod) mod.order = o.order
                 })
+                toast.success('Orden de módulos actualizado exitosamente');
             },
             true
         )
@@ -393,6 +414,7 @@ export const useLmsStore = defineStore('lms', () => {
                     const les = lessons.value.find(l => l.id === o.id)
                     if (les) les.order = o.order
                 })
+                toast.success('Orden de lecciones actualizado exitosamente');
             },
             true
         )

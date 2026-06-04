@@ -20,10 +20,10 @@ authStore.init();
     <div class="transition-colors duration-500" :class="isAdminView ? 'admin-theme' : 'user-theme'"
         style="background-color: hsl(var(--background))">
         
-        <main class="w-full transition-all duration-500 mx-auto" v-if="authStore.isAuthenticated && !authStore.loading">
+        <main class="w-full transition-all duration-500 mx-auto pb-4" v-if="authStore.isAuthenticated && !authStore.loading">
             <slot />
         </main>
-        <main class="w-full transition-all duration-500 mx-auto pb-6" v-else-if="!authStore.isAuthenticated && !authStore.loading">
+        <main class="w-full transition-all duration-500 mx-auto pb-8" v-else-if="!authStore.isAuthenticated && !authStore.loading">
             <!-- Pagina no tiene acceso a esta seccion -->
             <div class="flex items-center justify-center h-screen">
                 <div class="text-center">

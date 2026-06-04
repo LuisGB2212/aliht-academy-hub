@@ -28,7 +28,8 @@
   "dependencies": {
     "@vueuse/core": "^14.2.1",
     "pdfjs-dist": "^5.7.284",
-    "sortablejs": "^1.15.7"
+    "sortablejs": "^1.15.7",
+    "vue3-toastify": "^0.2.9"
   },
   "peerDependencies": {
     "lucide-vue-next": "^1.0.0",

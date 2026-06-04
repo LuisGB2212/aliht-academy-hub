@@ -162,9 +162,15 @@ export interface TopUserStat {
     lessons: TopUserLesson[];
     has_evaluation?: boolean;
     evaluation_id?: number | null;
+    has_evaluation_id?: boolean;
     has_evaluation_result?: boolean;
+    evaluation_result_id?: number;
     evaluation_score?: number | null;
+    total_evaluation_score?: number | null;
     evaluation_passed?: boolean | null;
+    practice_submission?: PracticeSubmission;
+    practice_has_exercise?: boolean | null;
+    practice_exercise?: string | null;
 }
 
 export interface ModuleCompletion {

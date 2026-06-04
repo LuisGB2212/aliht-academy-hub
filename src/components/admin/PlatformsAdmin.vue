@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useLmsStore } from '@/stores/aliht-context-store'
-import { usePlatformForm } from '@/composables/usePlatformForm'
+import { usePlatformForm } from '@/composables/use-platform-form'
 import {
     Plus, Edit, Trash2, Eye, EyeOff, GripVertical, Loader2,
     Monitor, Globe, UploadCloud, CheckCircle2, AlertCircle, X

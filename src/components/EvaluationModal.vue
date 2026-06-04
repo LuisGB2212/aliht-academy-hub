@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useLmsStore } from '@/stores/aliht-context-store'
-import type { ModuleEvaluation, EvaluationResult } from '@/types/academy-type'
+import type { ModuleEvaluation, EvaluationResult, PlatformContentUploadState } from '@/types/academy-type'
 import {
     CheckCircle2, XCircle, Loader2, Trophy, RotateCcw, ChevronDown,
     Upload, FileText, CheckCheck, AlertCircle
 } from 'lucide-vue-next'
+import AreaScroll from './ui/AreaScroll.vue';
+import { uploadAcademyFile } from '@/utils/uploadUtils.ts';
 
 const props = defineProps<{
     evaluation: ModuleEvaluation
@@ -93,7 +95,6 @@ function retry() {
     result.value = null
     step.value = 'quiz'
     practiceFile.value = null
-    practiceUploading.value = false
     practiceSubmitted.value = false
     practiceError.value = ''
 }
@@ -114,14 +115,16 @@ const scoreColor = computed(() => {
 
 // ─── Practice Exercise Upload ───────────────────────────────────────────────
 
-const hasPractice = computed(() =>
-    !!props.evaluation.practice_exercise && result.value?.passed === true
-)
+const hasPractice = computed(() => !!props.evaluation.practice_exercise && result.value?.passed === true)
 
-const practiceFile      = ref<File | null>(null)
-const practiceUploading = ref(false)
+const practiceFile = ref<File | null>(null)
+const practiceError = ref('')
+const uploadStates = ref<PlatformContentUploadState>({
+    isUploading: false,
+    progress: 0,
+    error: ''
+})
 const practiceSubmitted = ref(false)
-const practiceError     = ref('')
 
 // Check if already submitted (from cache)
 const alreadySubmitted = computed(() =>
@@ -141,85 +144,32 @@ function onFileSelected(event: Event) {
     practiceError.value = ''
 }
 
-const ACCEPTED_TYPES = [
-    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'video/mp4', 'video/quicktime', 'video/webm',
-]
 const ACCEPTED_EXTENSIONS = '.jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.mp4,.mov,.webm'
 
 async function handlePracticeUpload() {
-    if (!practiceFile.value) return
-    const file = practiceFile.value
+    const ev   = props.evaluation
+    const file = practiceFile.value;
+    if (!ev || !file) return
 
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-        practiceError.value = 'Tipo de archivo no permitido.'
-        return
-    }
-    if (file.size > 300 * 1024 * 1024) { // 300 MB max
-        practiceError.value = 'El archivo no debe superar 300 MB.'
-        return
-    }
-
-    practiceUploading.value = true
     practiceError.value = ''
 
     try {
-        // 1. Get presigned URL
-        const { apiRepository } = await import('@/utils/apiRepository')
-
-        const presignRes = await apiRepository.post<{
-            upload_url: string; public_url: string; key: string
-        }>({
-            endpoint: '/academy/upload/presigned-url',
-            body: {
-                file_name:   file.name,
-                file_type:   file.type,
-                upload_type: 'practice',
-            },
+        const { publicUrl, key } = await uploadAcademyFile(file, 'practice', (progress) => {
+            uploadStates.value = { ...uploadStates.value, progress }
         })
 
-        if (!presignRes?.data?.upload_url) {
-            practiceError.value = 'No se pudo obtener la URL de subida.'
-            return
-        }
-
-        const { upload_url, public_url, key } = presignRes.data
-
-        // 2. Upload directly to S3
-        const s3Res = await fetch(upload_url, {
-            method: 'PUT',
-            headers: { 'Content-Type': file.type },
-            body: file,
+        await store.submitPracticeFile(ev.id, {
+            file_url: publicUrl, file_key: key, file_type: file.type,
+            file_name: file.name, module_id: props.evaluation.module_id,
         })
 
-        if (!s3Res.ok) {
-            practiceError.value = 'Error al subir el archivo. Intenta de nuevo.'
-            return
-        }
-
-        // 3. Register submission in backend
-        const submission = await store.submitPracticeFile(props.evaluation.id, {
-            file_url:  public_url,
-            file_key:  key,
-            file_type: file.type,
-            file_name: file.name,
-            module_id: props.evaluation.module_id,
-        })
-
-        if (submission) {
-            practiceSubmitted.value = true
-            emit('practice-submitted')
-        } else {
-            practiceError.value = 'Error al registrar el archivo. Intenta de nuevo.'
-        }
-    } catch (e) {
-        console.error('[EvaluationModal] practice upload error:', e)
-        practiceError.value = 'Error inesperado. Intenta de nuevo.'
+        store.syncProgressFromApi();
+        
+    } catch (error: any) {
+        console.error(error)
+        practiceError.value = (error instanceof Error) ? error.message : 'Error inesperado. Intenta de nuevo.'
     } finally {
-        practiceUploading.value = false
+        uploadStates.value.isUploading = false
     }
 }
 </script>
@@ -230,7 +180,7 @@ async function handlePracticeUpload() {
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-                <div class="relative z-10 w-full max-w-2xl mx-auto max-h-[90vh] flex flex-col">
+                <div class="relative z-10 w-full max-w-3xl mx-auto max-h-[90vh] flex flex-col">
                     <div class="bg-card border border-border/50 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
                         <!-- Header (accordion) -->
@@ -281,7 +231,7 @@ async function handlePracticeUpload() {
 
                         <!-- ═══ QUIZ step ═══════════════════════════════════════ -->
                         <template v-if="step === 'quiz'">
-                            <div class="overflow-y-auto flex-1 p-6 space-y-6">
+                            <AreaScroll class="p-6 space-y-6">
                                 <div v-for="(q, qi) in evaluation.questions" :key="q.id">
                                     <p class="text-sm font-semibold text-foreground mb-3">
                                         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full gradient-bg text-primary-foreground text-[10px] font-bold mr-2">{{ qi + 1 }}</span>
@@ -337,7 +287,7 @@ async function handlePracticeUpload() {
                                         </template>
                                     </div>
                                 </div>
-                            </div>
+                            </AreaScroll>
 
                             <!-- Footer -->
                             <div class="px-6 py-4 border-t border-border/50 bg-muted/10 shrink-0 flex items-center justify-end">
@@ -348,10 +298,11 @@ async function handlePracticeUpload() {
                                 </button>
                             </div>
                         </template>
+                        
 
                         <!-- ═══ RESULT step ═════════════════════════════════════ -->
                         <template v-else>
-                            <div class="overflow-y-auto flex-1 p-8">
+                            <AreaScroll>
                                 <!-- Score block -->
                                 <div class="text-center mb-6">
                                     <!-- Icon -->
@@ -437,33 +388,33 @@ async function handlePracticeUpload() {
                                         </div>
 
                                         <button @click="emit('skip')"
-                                            class="text-sm text-red-500 hover:text-destructive transition-colors">
+                                            class="text-sm text-red-500 hover:text-destructive transition-colors cursor-pointer">
                                             Omitir ejercicio practico
                                         </button>
 
                                         <!-- Upload button -->
                                         <button v-if="practiceFile" @click="handlePracticeUpload"
-                                            :disabled="practiceUploading"
+                                            :disabled="uploadStates.isUploading"
                                             class="w-full mt-3 gradient-bg text-primary-foreground text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] transition-all disabled:opacity-50 disabled:scale-100">
-                                            <Loader2 v-if="practiceUploading" class="w-4 h-4 animate-spin" />
+                                            <Loader2 v-if="uploadStates.isUploading" class="w-4 h-4 animate-spin" />
                                             <Upload v-else class="w-4 h-4" />
-                                            {{ practiceUploading ? 'Subiendo...' : 'Entregar ejercicio' }}
+                                            {{ uploadStates.isUploading ? 'Subiendo...' : 'Entregar ejercicio' }}
                                         </button>
                                     </div>
                                 </div>
+                            </AreaScroll>
 
-                                <!-- Actions -->
-                                <div class="flex gap-3 w-full mt-6">
-                                    <button v-if="!result?.passed" @click="retry"
-                                        class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border text-sm font-bold text-muted-foreground hover:bg-muted transition-colors">
-                                        <RotateCcw class="w-4 h-4" />
-                                        Reintentar
-                                    </button>
-                                    <button @click="handleFinish" :disabled="!canFinish"
-                                        class="flex-1 gradient-bg text-primary-foreground font-bold py-2.5 px-4 rounded-xl shadow-md hover:scale-[1.02] transition-transform text-sm disabled:opacity-40 disabled:scale-100">
-                                        {{ result?.passed ? (canFinish ? 'Continuar' : 'Sube el archivo para continuar') : 'Cerrar' }}
-                                    </button>
-                                </div>
+                            <!-- Actions -->
+                            <div class="px-6 py-4 gap-4 border-t border-border/50 bg-muted/10 shrink-0 flex items-center justify-end">
+                                <button v-if="!result?.passed" @click="retry"
+                                    class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border text-sm font-bold text-muted-foreground hover:bg-muted transition-colors">
+                                    <RotateCcw class="w-4 h-4" />
+                                    Reintentar
+                                </button>
+                                <button @click="handleFinish" :disabled="!canFinish"
+                                    class="flex-1 gradient-bg text-primary-foreground font-bold py-2.5 px-4 rounded-xl shadow-md hover:scale-[1.02] transition-transform text-sm disabled:opacity-40 disabled:scale-100">
+                                    {{ result?.passed ? (canFinish ? 'Continuar' : 'Sube el archivo para continuar') : 'Cerrar' }}
+                                </button>
                             </div>
                         </template>
                     </div>

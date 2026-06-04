@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 import { X } from 'lucide-vue-next'
+import AreaScroll from './AreaScroll.vue';
 
 defineProps<{
     show: boolean
@@ -47,8 +48,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleEscape))
                         </div>
 
                         <!-- Body -->
-                        <div class="p-6 max-h-[80vh] overflow-y-auto">
-                            <slot />
+                        <div class="p-6 max-h-[80vh]">
+                            <AreaScroll>
+                                <slot />
+                            </AreaScroll>
                         </div>
 
                         <!-- Footer -->

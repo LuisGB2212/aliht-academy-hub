@@ -4,6 +4,9 @@ import App from './App.vue'
 import './assets/index.css'
 import AlihtAcademyHubPlugin, { setLibConfig } from './index'
 
+import Vue3Toastify, { type ToastContainerOptions } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
+
 // 1. Configure BEFORE anything else so router base is correct
 // setLibConfig({
 //   apiBaseUrl: 'http://127.0.0.1:8000/api',
@@ -14,6 +17,14 @@ import AlihtAcademyHubPlugin, { setLibConfig } from './index'
 
 const app = createApp(App)
 app.use(createPinia())
+app.use(Vue3Toastify, {
+    autoClose: 5000,
+    theme: 'light',
+    transition: 'bounce',
+    position: 'top-right', // topRight es el estándar moderno
+    pauseOnHover: true,
+    closeOnClick: true,
+} as ToastContainerOptions);
 
 // { 'aliht': 1, 'nextravel': 2, 'bestravel': 3 }
 
