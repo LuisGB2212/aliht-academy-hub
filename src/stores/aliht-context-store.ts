@@ -31,6 +31,8 @@ const PROGRESS_KEY          = 'aliht-lms-progress'
 const EVAL_RESULTS_KEY      = 'aliht-lms-eval-results'      // { [moduleId]: EvaluationResult }
 const PRACTICE_SUB_KEY      = 'aliht-lms-practice-subs'     // { [evalId]: PracticeSubmission }
 
+export const APP_AGENCY = process.env.VITE_APP_AGENCY ?? 'Aliht Corporativo';
+
 export const useLmsStore = defineStore('lms', () => {
     // ─── State ─────────────────────────────────────────────────────────────────
     const platforms = ref<Platform[]>([])
@@ -757,6 +759,26 @@ export const useLmsStore = defineStore('lms', () => {
         return p.completed ? 'completed' : 'in_progress'
     }
 
+    const scoreTotalModule = (moduleId: number): number => {
+        const result = getEvalResult(moduleId);
+        if (!result) return 0;
+
+        let scoreFinal = result.score ?? 0;
+
+        if (result.has_practice_exercise) {
+            const ev = modules.value?.find((m: any) => m.id === moduleId)?.evaluation;
+            if (!ev) return scoreFinal;
+            
+            const sub = getPracticeSubmission(ev.id);
+            if (sub) {
+                const practiceMetadata = sub?.review_metadata;
+                scoreFinal += practiceMetadata?.score || 0;
+            };
+        }
+        
+        return scoreFinal;
+    }
+
     // ─── Expose ────────────────────────────────────────────────────────────────
     return {
         platforms,
@@ -826,5 +848,6 @@ export const useLmsStore = defineStore('lms', () => {
         getLessonStatus,
         isModuleCompleted,
         getPayloadBaseProgress,
+        scoreTotalModule
     }
 })

@@ -267,7 +267,7 @@ onMounted(async () => {
                     </div>
                     <div class="flex-1 min-w-0">
                         <h3 class="font-bold text-foreground truncate">{{ folder.name }}</h3>
-                        <p class="text-xs text-muted-foreground mt-0.5">{{ (folder as any).moduleCount }} módulos</p>
+                        <p class="text-xs text-muted-foreground mt-0.5">{{ folder.moduleCount }} módulos</p>
                     </div>
                 </div>
 
@@ -322,8 +322,9 @@ onMounted(async () => {
                                         <span v-if="isTrophyReady(mod.id) && getModuleState(mod.id) === 'needs_review'" class="inline-flex items-center text-orange-500 text-sm" title="¡Módulo en revisión!">
                                             <AlertCircle class="w-4 h-4 text-orange-500 mr-2" /> Enviado para revisión
                                         </span>
-                                        <span v-if="isTrophyReady(mod.id) && getModuleState(mod.id) === 'complete'" class="inline-flex items-center text-amber-500" title="¡Módulo completado!">
-                                            <Trophy class="w-4 h-4 fill-amber-400 text-amber-500" /> {{ store.getEvalResult(mod.id)?.score }}% / 100%
+                                        <span v-if="isTrophyReady(mod.id) && getModuleState(mod.id) === 'complete'"
+                                            class="inline-flex items-center text-amber-500" title="¡Módulo completado!">
+                                            <Trophy class="w-4 h-4 fill-amber-400 text-amber-500" /> {{ store.scoreTotalModule(mod.id) }}% / 100%
                                         </span>
                                     </div>
                                 </Transition>
@@ -341,35 +342,8 @@ onMounted(async () => {
                 <!-- Expanded content -->
                 <Transition name="fade-slide">
                     <div v-if="openModules.has(mod.id)" class="border-t border-border/50">
-
-                        <!-- ① Normal: lessons list -->
-                        <template v-if="getModuleState(mod.id) === 'lessons' || !store.isModuleCompleted(mod.id)">
-                            <div class="bg-muted/10 divide-y divide-border/40">
-                                <RouterLink v-for="lesson in store.getModuleLessons(mod.id)" :key="lesson.id"
-                                    :to="{ name: 'lesson', params: { categoryId: platformId, lessonId: lesson.id } }"
-                                    class="flex items-center gap-4 px-5 md:px-6 py-4 group/item transition-all hover:bg-muted">
-                                    <div class="shrink-0">
-                                        <CheckCircle2 v-if="store.getLessonStatus(lesson.id) === 'completed'" class="w-5 h-5 text-success" />
-                                        <PlayCircle   v-else-if="store.getLessonStatus(lesson.id) === 'in_progress'" class="w-5 h-5 text-primary" />
-                                        <Circle       v-else class="w-5 h-5 text-muted-foreground opacity-30" />
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <component :is="contentIcons[lesson.type_content] || FileText" class="w-4 h-4 text-muted-foreground opacity-60" />
-                                            <p class="text-sm md:text-[15px] font-semibold truncate transition-colors"
-                                                :class="store.getLessonStatus(lesson.id) === 'completed' ? 'text-muted-foreground' : 'text-foreground group-hover/item:text-primary'">
-                                                {{ lesson.title }}
-                                            </p>
-                                        </div>
-                                        <p class="text-xs text-muted-foreground truncate opacity-80">{{ lesson.description || 'Sin descripción' }}</p>
-                                    </div>
-                                    <ArrowRight class="w-5 h-5 text-primary opacity-0 translate-x-[-8px] transition-all group-hover/item:opacity-100 group-hover/item:translate-x-0" />
-                                </RouterLink>
-                            </div>
-                        </template>
-
                         <!-- ② Needs evaluation -->
-                        <template v-else-if="getModuleState(mod.id) === 'needs_eval'">
+                        <template v-if="getModuleState(mod.id) === 'needs_eval'">
                             <div class="p-6 flex items-center justify-between gap-4 bg-primary/5">
                                 <div class="flex items-center gap-3">
                                     <div class="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shrink-0">
@@ -468,6 +442,29 @@ onMounted(async () => {
                             </div>
                         </template>
 
+                        <!-- ① Normal: lessons list -->
+                        <div class="bg-muted/10 divide-y divide-border/40">
+                            <RouterLink v-for="lesson in store.getModuleLessons(mod.id)" :key="lesson.id"
+                                :to="{ name: 'lesson', params: { categoryId: platformId, lessonId: lesson.id } }"
+                                class="flex items-center gap-4 px-5 md:px-6 py-4 group/item transition-all hover:bg-muted">
+                                <div class="shrink-0">
+                                    <CheckCircle2 v-if="store.getLessonStatus(lesson.id) === 'completed'" class="w-5 h-5 text-success" />
+                                    <PlayCircle   v-else-if="store.getLessonStatus(lesson.id) === 'in_progress'" class="w-5 h-5 text-primary" />
+                                    <Circle       v-else class="w-5 h-5 text-muted-foreground opacity-30" />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <component :is="contentIcons[lesson.type_content] || FileText" class="w-4 h-4 text-muted-foreground opacity-60" />
+                                        <p class="text-sm md:text-[15px] font-semibold truncate transition-colors"
+                                            :class="store.getLessonStatus(lesson.id) === 'completed' ? 'text-muted-foreground' : 'text-foreground group-hover/item:text-primary'">
+                                            {{ lesson.title }}
+                                        </p>
+                                    </div>
+                                    <p class="text-xs text-muted-foreground truncate opacity-80">{{ lesson.description || 'Sin descripción' }}</p>
+                                </div>
+                                <ArrowRight class="w-5 h-5 text-primary opacity-0 translate-x-[-8px] transition-all group-hover/item:opacity-100 group-hover/item:translate-x-0" />
+                            </RouterLink>
+                        </div>
                     </div>
                 </Transition>
             </div>
