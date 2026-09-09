@@ -2,14 +2,16 @@
 import { ref, onMounted, computed } from 'vue'
 import { apiRepository } from '@/utils/apiRepository'
 import { Loader2, Users, Trophy, BookOpen, Layers, Search, RefreshCw, FileText, FileArchive, Equal } from 'lucide-vue-next'
-import { AcademyPlatformStatistics } from '@/types/academy-type'
+import { AcademyPlatformStatistics, AgencyStat, TopUserStat } from '@/types/academy-type'
 import { useEvaluationResultComposable } from '@/composables/use-evaluation-result'
 import EvaluationResultsModal from './modals/EvaluationResultsModal.vue'
 import EvaluationExcersiceModal from './modals/EvaluationExcersiceModal.vue'
 import { useEvaluationExcersiceComposable } from '@/composables/use-evaluation-excersice.ts'
+import { useLmsStore } from '@/stores/aliht-context-store';
 
 const evaluationResultComposable = useEvaluationResultComposable()
 const evaluationExcersiceComposable = useEvaluationExcersiceComposable()
+const store = useLmsStore();
 
 const stats = ref<AcademyPlatformStatistics | null>(null)
 const loading = ref(true)
@@ -17,6 +19,8 @@ const selectedAgencyId = ref<string>('')
 const searchQuery = ref('')
 const currentSubTab = ref<'agencies' | 'users' | 'modules' | 'lessons'>('users')
 const allAgencies = ref<any[]>([])
+const selectedUser = ref<number | null>(null)
+const selectedModule = ref<number | null>(null)
 
 async function fetchStats() {
     loading.value = true
@@ -52,18 +56,47 @@ onMounted(() => {
 // Filtering lists
 const filteredAgencies = computed(() => {
     if (!stats.value?.by_agency) return []
-    return stats.value.by_agency.filter((agency: any) =>
+    return stats.value.by_agency.filter((agency: AgencyStat) =>
         agency.agency_name?.toLowerCase().includes(searchQuery.value.toLowerCase())
     )
 })
 
 const filteredUsers = computed(() => {
     if (!stats.value?.top_users) return []
-    return stats.value.top_users.filter((user: any) =>
-        user.user_name?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        user.user_email?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        user.agency_name?.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
+
+    const query = searchQuery.value?.trim().toLowerCase()
+
+    return stats.value.top_users.filter((user: TopUserStat) => {
+        if (selectedUser.value && user.user_id !== selectedUser.value) {
+            return false
+        }
+
+        if (selectedModule.value && user.module_id !== selectedModule.value) {
+            return false
+        }
+
+        if (query) {
+            const matchName = user.user_name?.toLowerCase().includes(query)
+            const matchEmail = user.user_email?.toLowerCase().includes(query)
+            const matchModule = user.module_name?.toLowerCase().includes(query)
+            
+            if (!matchName && !matchEmail && !matchModule) {
+                return false
+            }
+        }
+
+        return true
+    })
+})
+
+// Listar todos los usuarios unicos para select y filtrar
+const selectFilteredUsers = computed(() => {
+    if (!stats.value?.top_users) return []
+    return [...new Set(stats.value.top_users.map((user: any) => ({
+        user_id: user.user_id,
+        user_name: user.user_name,
+        user_email: user.user_email
+    })))]
 })
 
 const filteredModules = computed(() => {
@@ -98,7 +131,7 @@ const filteredLessons = computed(() => {
                     <select v-model="selectedAgencyId" @change="fetchStats"
                         class="px-3 py-2 text-sm bg-card border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20">
                         <option value="">Todas las Agencias</option>
-                        <option v-for="agency in allAgencies" :key="agency.agency_id" :value="agency.agency_id">
+                        <option v-for="agency in allAgencies" :key="`${agency.agency_id}-${agency.agency_name}`" :value="agency.agency_id">
                             {{ agency.agency_name }}
                         </option>
                     </select>
@@ -188,7 +221,7 @@ const filteredLessons = computed(() => {
                 </div>
 
                 <!-- Search -->
-                <div class="relative w-full sm:w-64">
+                <div class="relative w-full sm:w-64 pb-2">
                     <Search class="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
                     <input v-model="searchQuery" placeholder="Buscar..."
                         class="w-full pl-9 pr-4 py-2 text-sm bg-card border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20" />
@@ -202,16 +235,45 @@ const filteredLessons = computed(() => {
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-muted/40 border-b border-border/50">
-                                <th class="px-3 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Usuario</th>
-                                <th class="px-2 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Progreso módulos</th>
-                                <th class="px-2 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Lecciones</th>
-                                <th class="px-2 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Lecciones Completadas</th>
-                                <th class="px-2 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Agencia</th>
+                                <th class="px-3 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground max-w-xs">
+                                    <div class="flex flex-col gap-1">
+                                        <div class="flex flex-col gap-1 items-center">Usuario</div>
+                                        <div class="px-4">
+                                            <select class="w-full px-2 py-1 text-xs bg-card border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20" name="users" id="users" v-model="selectedUser" @change="fetchStats">
+                                                <option :value="null">Todos los Usuarios</option>
+                                                <option v-for="user in selectFilteredUsers" :key="user.user_id"
+                                                    :value="user.user_id">
+                                                    {{ user.user_name }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </th>
+                                <th class="px-2 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground max-w-xs">
+                                    <div class="flex flex-col gap-1">
+                                        <div class="flex flex-col gap-1 items-center">Progreso Módulos</div>
+                                        <div class="px-4">
+                                            <select class="w-full px-2 py-1 text-xs bg-card border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20" name="modules" id="modules" v-model="selectedModule" @change="fetchStats">
+                                                <option :value="null">Todos los Módulos</option>
+                                                <option v-for="(module, index) in store.modules" :key="`${module.id}-${module.name}-${index}`"
+                                                    :value="module.id">
+                                                    {{ module.name }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </th>
+                                <th class="px-2 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                    Total Lecciones</th>
+                                <th class="px-2 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                    Lecciones Completadas</th>
+                                <th class="px-2 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                    Agencia</th>
                                 <th class="px-2 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground text-center">Evaluación</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border/40">
-                            <tr v-for="user in filteredUsers" :key="user.user_id"
+                            <tr v-for="(user, index) in filteredUsers" :key="`${user.user_id}-${user.module_name || index}`"
                                 class="hover:bg-muted/20 transition-colors">
                                 <td class="p-2">
                                     <div class="flex items-center gap-3">
@@ -247,7 +309,8 @@ const filteredLessons = computed(() => {
                                 <td class="p-2 font-semibold text-sm text-green-600">{{ user.total_completed }} lecciones</td>
                                 <td class="p-2 font-medium text-sm text-info">
                                     <div class="flex flex-col gap-1">
-                                        <div v-for="lesson in user.lessons" :key="lesson.lesson_id"
+                                        <div v-for="(lesson, idx) in user.lessons" 
+                                            :key="`${lesson.lesson_id}-${idx}`"
                                             class="flex items-center gap-1.5">
                                             <div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
                                             <span class="text-sm truncate max-w-xs">{{ lesson.lesson_title }}</span>
@@ -320,7 +383,7 @@ const filteredLessons = computed(() => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border/40">
-                            <tr v-for="agency in filteredAgencies" :key="agency.agency_id"
+                            <tr v-for="(agency, idx) in filteredAgencies" :key="`${agency.agency_id}-${agency.agency_name || idx}`"
                                 class="hover:bg-muted/20 transition-colors">
                                 <td class="p-4">
                                     <p class="font-bold text-sm text-foreground">{{ agency.agency_name }}</p>
@@ -364,7 +427,7 @@ const filteredLessons = computed(() => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border/40">
-                            <tr v-for="mod in filteredModules" :key="mod.module_id"
+                            <tr v-for="(mod, idx) in filteredModules" :key="`${mod.module_id}-${mod.module || idx}`"
                                 class="hover:bg-muted/20 transition-colors">
                                 <td class="p-4">
                                     <p class="font-bold text-sm text-foreground">{{ mod.module || 'Módulo Desconocido'}}</p>
@@ -396,7 +459,7 @@ const filteredLessons = computed(() => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border/40">
-                            <tr v-for="lesson in filteredLessons" :key="lesson.lesson_id"
+                            <tr v-for="(lesson, idx) in filteredLessons" :key="`${lesson.lesson_id}-${lesson.lesson || idx}`"
                                 class="hover:bg-muted/20 transition-colors">
                                 <td class="p-4">
                                     <p class="text-[10px] text-muted-foreground font-mono">ID: {{ lesson.lesson_id }}</p>

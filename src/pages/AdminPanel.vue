@@ -81,13 +81,14 @@ onMounted(async () => {
             </button>
         </div>
 
-        <PlatformsAdmin v-if="tabSelected === 'plataformas'" />
+        <PlatformsAdmin :key="tabSelected" v-if="tabSelected === 'plataformas'" />
         <ModulesAdmin
+            :key="tabSelected"
             v-if="tabSelected === 'funcionalidades'"
             :folder-id="selectedFolderId"
             @folder-change="(id) => selectedFolderId = id"
         />
-        <LessonsAdmin v-if="tabSelected === 'tutoriales'" />
-        <UserProgressAdmin v-if="tabSelected === 'progreso'" />
+        <LessonsAdmin :key="tabSelected" v-if="tabSelected === 'tutoriales'" />
+        <UserProgressAdmin :key="tabSelected" v-if="tabSelected === 'progreso'" />
     </div>
 </template>

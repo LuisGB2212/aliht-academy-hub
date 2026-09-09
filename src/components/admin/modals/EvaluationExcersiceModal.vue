@@ -3,11 +3,20 @@ import { Loader2, X, FileText, Image, Film, File, Star, MessageSquare, AlertCirc
 import { EvaluationExcersiceComposable } from '@/composables/use-evaluation-excersice';
 import AreaScroll from '@/components/ui/AreaScroll.vue';
 
+const emit = defineEmits<{
+    (e: 'refreshStats'): void
+}>()
+
 const { evaluationExcersiceComposable } = defineProps<{
     evaluationExcersiceComposable: EvaluationExcersiceComposable
 }>()
 
 const { state, calMaxScore, closeShowCalSubmisionModal, submitPracticeReview } = evaluationExcersiceComposable;
+
+async function handleSubmit() {
+    await submitPracticeReview();
+    emit('refreshStats');
+}
 
 function getFileIcon(fileType: string) {
     if (!fileType) return 'file'
@@ -27,10 +36,7 @@ function getFileIcon(fileType: string) {
                 <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeShowCalSubmisionModal" />
 
                 <div class="relative z-10 w-full max-w-2xl mx-auto max-h-[92vh] flex flex-col">
-                    <form @submit.prevent="async () => {
-                        await submitPracticeReview()
-                        $emit('refreshStats')
-                        }" class="bg-card border border-border/50 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+                    <form @submit.prevent="handleSubmit" class="bg-card border border-border/50 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
 
                         <!-- Header -->
                         <div class="flex items-start justify-between px-6 py-4 border-b border-border/50 shrink-0">

@@ -31,7 +31,7 @@ const PROGRESS_KEY          = 'aliht-lms-progress'
 const EVAL_RESULTS_KEY      = 'aliht-lms-eval-results'      // { [moduleId]: EvaluationResult }
 const PRACTICE_SUB_KEY      = 'aliht-lms-practice-subs'     // { [evalId]: PracticeSubmission }
 
-export const APP_AGENCY = process.env.VITE_APP_AGENCY ?? 'Aliht Corporativo';
+export const APP_AGENCY = import.meta.env.VITE_APP_AGENCY ?? 'Aliht Corporativo';
 
 export const useLmsStore = defineStore('lms', () => {
     // ─── State ─────────────────────────────────────────────────────────────────
