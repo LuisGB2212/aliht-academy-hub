@@ -404,10 +404,11 @@ async function handleEvalDelete() {
 // ─── Lifecycle ─────────────────────────────────────────────────────────────
 onMounted(async () => {
     await store.fetchFolders()
-    nextTick(() => {
-        initFolderSortable()
-        initSortable()
-    })
+})
+
+// ─── Watchers ──────────────────────────────────────────────────────────────
+watch(folderListRef, () => {
+    nextTick(() => initFolderSortable())
 })
 
 // Reinit sortable when folder changes (different list)
@@ -440,15 +441,14 @@ watch(() => props.folderId, () => {
 
         <div v-else ref="folderListRef" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <div v-for="folder in store.folders" :key="folder.id"
-                class="group relative flex flex-col bg-card border border-border/50 rounded-2xl p-5 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer"
-                @click="enterFolder(folder.id)">
+                class="group relative flex flex-col bg-card border border-border/50 rounded-2xl p-5 hover:border-primary/30 hover:shadow-md transition-all">
 
                 <!-- Drag handle -->
                 <div class="drag-handle absolute top-3 right-3 opacity-0 group-hover:opacity-40 cursor-grab" @click.stop>
                     <GripVertical class="w-4 h-4 text-muted-foreground" />
                 </div>
 
-                <div class="flex items-start gap-3 mb-3">
+                <div class="flex items-start gap-3 mb-3 cursor-pointer" @click="enterFolder(folder.id)">
                     <div class="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shrink-0">
                         <Folder class="w-5 h-5 text-primary-foreground" />
                     </div>
