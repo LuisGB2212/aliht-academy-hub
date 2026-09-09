@@ -91,6 +91,7 @@ const initFolderSortable = () => {
             newFolders.splice(newIndex, 0, moved)
             const orders = newFolders.map((f, i) => ({ id: f.id, order: i + 1 }))
             await store.reorderFolders(orders)
+            await store.fetchFolders()
         }
     })
 }
