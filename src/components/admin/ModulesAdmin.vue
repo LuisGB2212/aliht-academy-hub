@@ -6,7 +6,8 @@ import { ACADEMY_PROFILES } from '@/types/academy-type'
 import {
     Plus, Edit, Trash2, Eye, EyeOff, GripVertical, Loader2, ClipboardList,
     X, PlusCircle, CheckSquare, BrainCircuit, Users, Folder, FolderOpen,
-    ChevronRight, ArrowLeft, FolderPlus
+    ChevronRight, ArrowLeft, FolderPlus,
+    Search
 } from 'lucide-vue-next'
 import Modal from '@/components/ui/Modal.vue'
 import Sortable from 'sortablejs'
@@ -100,7 +101,15 @@ const editing      = ref<Partial<Module>>({})
 const isNew        = ref(false)
 const isSubmitting = ref(false)
 const listRef      = ref<HTMLElement | null>(null)
+const searchTerm   = ref('')
 
+const filteredModules = computed(() => {
+    if (!searchTerm.value) return folderModules.value
+    return folderModules.value.filter(module =>
+        module.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+        module.description?.toLowerCase().includes(searchTerm.value.toLowerCase())
+    )
+})
 // Modules filtered to current folder
 const folderModules = computed(() => {
     if (props.folderId === null) return store.modules
@@ -511,7 +520,15 @@ watch(() => props.folderId, () => {
 
         <!-- Module list -->
         <div v-else class="grid gap-3" ref="listRef">
-            <div v-for="mod in folderModules" :key="mod.id"
+            <!-- Buscador -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-end border-b border-border pb-px gap-4">
+                <div class="relative w-full max-w-xs pb-2">
+                    <Search class="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+                    <input v-model="searchTerm" placeholder="Buscar..."
+                        class="w-full pl-9 pr-4 py-2 text-sm bg-card border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20" />
+                </div>
+            </div>
+            <div v-for="mod in filteredModules" :key="mod.id"
                 class="flex flex-col md:flex-row md:items-center gap-4 bg-card rounded-xl p-4 hover:border-primary/30 transition-all group shadow-sm hover:shadow-md hover:scale-[1.01] border border-border/50">
                 <div class="hidden md:block cursor-grab opacity-40 hover:opacity-100 transition-opacity drag-handle p-1">
                     <GripVertical class="w-4 h-4 text-muted-foreground" />
@@ -561,7 +578,7 @@ watch(() => props.folderId, () => {
                 </div>
             </div>
 
-            <div v-if="folderModules.length === 0"
+            <div v-if="filteredModules.length === 0"
                 class="text-center py-12 border-2 border-dashed border-border rounded-2xl bg-muted/30">
                 <p class="text-muted-foreground">No hay funcionalidades en esta carpeta.</p>
                 <button @click="startNew" class="mt-3 text-sm text-primary hover:underline font-semibold">

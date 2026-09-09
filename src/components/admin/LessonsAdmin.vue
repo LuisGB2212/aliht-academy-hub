@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { onMounted, nextTick, ref } from 'vue'
+import { onMounted, nextTick, ref, computed } from 'vue'
 import { useLmsStore } from '@/stores/aliht-context-store'
 import { useLessonForm } from '@/composables/use-lesson-form'
 import type { ContentType } from '@/types/academy-type'
 import {
     Plus, Edit, Trash2, Eye, EyeOff, GripVertical, Loader2,
     Video, FileText, Link, Type, Globe, Monitor, ImageIcon,
-    UploadCloud, CheckCircle2, AlertCircle, X
+    UploadCloud, CheckCircle2, AlertCircle, X,
+    Search
 } from 'lucide-vue-next'
 import Modal from '@/components/ui/Modal.vue'
 import Sortable from 'sortablejs'
@@ -33,6 +34,16 @@ const {
     getPlatformName,
     getFileAccept,
 } = useLessonForm()
+
+const searchTerm = ref('');
+
+const filteredLessons = computed(() => {
+    if (!searchTerm.value) return store.lessons
+    return store.lessons.filter(lesson =>
+        lesson.title.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+        lesson.description?.toLowerCase().includes(searchTerm.value.toLowerCase())
+    )
+})
 
 // ─── Content type metadata ──────────────────────────────────────────────────
 const contentTypes: { value: ContentType; label: string; icon: any; hint: string }[] = [
@@ -108,7 +119,15 @@ onMounted(async () => {
 
         <!-- List -->
         <div v-else class="grid gap-3" ref="listRef">
-            <div v-for="lesson in store.lessons" :key="lesson.id"
+            <!-- Buscador -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-end border-b border-border pb-px gap-4">
+                <div class="relative w-full max-w-xs pb-2">
+                    <Search class="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+                    <input v-model="searchTerm" placeholder="Buscar..."
+                        class="w-full pl-9 pr-4 py-2 text-sm bg-card border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20" />
+                </div>
+            </div>
+            <div v-for="lesson in filteredLessons" :key="lesson.id"
                 class="flex flex-col md:flex-row md:items-center gap-4 bg-card rounded-xl p-4 hover:border-primary/30 transition-all group shadow-sm hover:shadow-md hover:scale-[1.01] hover:cursor-pointer">
                 <div
                     class="hidden md:block cursor-grab opacity-40 hover:opacity-100 transition-opacity drag-handle p-1">
@@ -156,7 +175,7 @@ onMounted(async () => {
                 </div>
             </div>
 
-            <div v-if="store.lessons.length === 0"
+            <div v-if="filteredLessons.length === 0"
                 class="text-center py-12 border-2 border-dashed border-border rounded-2xl bg-muted/30">
                 <p class="text-muted-foreground">No hay tutoriales registrados.</p>
             </div>
