@@ -48,7 +48,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleEscape))
                         </div>
 
                         <!-- Body -->
-                        <div class="p-6 max-h-[80vh]">
+                        <div class="max-h-[80vh]">
                             <AreaScroll>
                                 <slot />
                             </AreaScroll>

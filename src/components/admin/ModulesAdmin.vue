@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useLmsStore } from '@/stores/aliht-context-store'
 import type { Module, ModuleEvaluation, EvaluationQuestion, EvaluationOption, AcademyFolder } from '@/types/academy-type'
 import { ACADEMY_PROFILES } from '@/types/academy-type'
@@ -10,7 +10,7 @@ import {
     Search
 } from 'lucide-vue-next'
 import Modal from '@/components/ui/Modal.vue'
-import Sortable from 'sortablejs'
+import { useSortableList, moveItem } from '@/composables/use-sortable-list'
 import AreaScroll from '../ui/AreaScroll.vue'
 
 const props = defineProps<{
@@ -76,25 +76,12 @@ function goBack() {
 }
 
 // Sortable for folders
-const initFolderSortable = () => {
-    if (!folderListRef.value) return
-    Sortable.create(folderListRef.value, {
-        handle: '.drag-handle',
-        animation: 150,
-        ghostClass: 'opacity-40',
-        onEnd: async (evt: any) => {
-            const { oldIndex, newIndex } = evt
-            if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return
-            const moved = store.folders[oldIndex]
-            const newFolders = [...store.folders]
-            newFolders.splice(oldIndex, 1)
-            newFolders.splice(newIndex, 0, moved)
-            const orders = newFolders.map((f, i) => ({ id: f.id, order: i + 1 }))
-            await store.reorderFolders(orders)
-            await store.fetchFolders()
-        }
-    })
-}
+useSortableList(folderListRef, (oldIndex, newIndex) =>
+    store.reorderFolders(
+        moveItem(store.folders, oldIndex, newIndex).map((f, i) => ({ id: f.id, order: i + 1 }))
+    ),
+    { ghostClass: 'opacity-40' }
+)
 
 // ─── Module-level state ─────────────────────────────────────────────────────
 const showModal    = ref(false)
@@ -183,24 +170,12 @@ function toggleProfile(id: number) {
     else editing.value.profile_ids.splice(idx, 1)
 }
 
-const initSortable = () => {
-    if (!listRef.value) return
-    Sortable.create(listRef.value, {
-        handle: '.drag-handle',
-        animation: 150,
-        ghostClass: 'opacity-50',
-        onEnd: async (evt: any) => {
-            const { oldIndex, newIndex } = evt
-            if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return
-            const movedItem = folderModules.value[oldIndex]
-            const newMods   = [...folderModules.value]
-            newMods.splice(oldIndex, 1)
-            newMods.splice(newIndex, 0, movedItem)
-            const orders = newMods.map((m, i) => ({ id: m.id, order: i + 1 }))
-            await store.reorderModules(orders)
-        }
-    })
-}
+// Drag handles are hidden while searching, so indexes always refer to folderModules
+useSortableList(listRef, (oldIndex, newIndex) =>
+    store.reorderModules(
+        moveItem(folderModules.value, oldIndex, newIndex).map((m, i) => ({ id: m.id, order: i + 1 }))
+    )
+)
 
 // ─── Evaluation state ──────────────────────────────────────────────────────
 const showEvalModal   = ref(false)
@@ -406,16 +381,6 @@ async function handleEvalDelete() {
 onMounted(async () => {
     await store.fetchFolders()
 })
-
-// ─── Watchers ──────────────────────────────────────────────────────────────
-watch(folderListRef, () => {
-    nextTick(() => initFolderSortable())
-})
-
-// Reinit sortable when folder changes (different list)
-watch(() => props.folderId, () => {
-    nextTick(() => initSortable())
-})
 </script>
 
 <template>
@@ -435,14 +400,14 @@ watch(() => props.folderId, () => {
             </button>
         </div>
 
-        <div v-if="store.isLoading" class="flex flex-col items-center justify-center py-12 text-muted-foreground">
+        <div v-if="store.isLoading && !store.folders.length" class="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Loader2 class="w-8 h-8 animate-spin mb-2" />
             <p>Cargando carpetas...</p>
         </div>
 
         <div v-else ref="folderListRef" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <div v-for="folder in store.folders" :key="folder.id"
-                class="group relative flex flex-col bg-card border border-border/50 rounded-2xl p-5 hover:border-primary/30 hover:shadow-md transition-all">
+                class="sortable-item group relative flex flex-col bg-card border border-border/50 rounded-2xl p-5 hover:border-primary/30 hover:shadow-md transition-all">
 
                 <!-- Drag handle -->
                 <div class="drag-handle absolute top-3 right-3 opacity-0 group-hover:opacity-40 cursor-grab" @click.stop>
@@ -514,7 +479,7 @@ watch(() => props.folderId, () => {
         </div>
 
         <!-- Loading -->
-        <div v-if="store.isLoading" class="flex flex-col items-center justify-center py-12 text-muted-foreground">
+        <div v-if="store.isLoading && !store.modules.length" class="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Loader2 class="w-8 h-8 animate-spin mb-2" />
             <p>Cargando módulos...</p>
         </div>
@@ -530,8 +495,8 @@ watch(() => props.folderId, () => {
                 </div>
             </div>
             <div v-for="mod in filteredModules" :key="mod.id"
-                class="flex flex-col md:flex-row md:items-center gap-4 bg-card rounded-xl p-4 hover:border-primary/30 transition-all group shadow-sm hover:shadow-md hover:scale-[1.01] border border-border/50">
-                <div class="hidden md:block cursor-grab opacity-40 hover:opacity-100 transition-opacity drag-handle p-1">
+                class="sortable-item flex flex-col md:flex-row md:items-center gap-4 bg-card rounded-xl p-4 hover:border-primary/30 transition-all group shadow-sm hover:shadow-md hover:scale-[1.01] border border-border/50">
+                <div v-if="!searchTerm" class="hidden md:block cursor-grab opacity-40 hover:opacity-100 transition-opacity drag-handle p-1">
                     <GripVertical class="w-4 h-4 text-muted-foreground" />
                 </div>
 

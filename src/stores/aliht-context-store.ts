@@ -245,18 +245,18 @@ export const useLmsStore = defineStore('lms', () => {
     }
 
     async function reorderFolders(orders: { id: number; order: number }[]) {
-        return handleRequest(
+        applyOrder(folders.value, orders)
+        let ok = false
+        await handleRequest(
             'reorderFolders',
             () => apiRepository.post({ endpoint: '/academy/folders/reorder', body: { orders } }),
             () => {
-                orders.forEach(o => {
-                    const f = folders.value.find(x => x.id === o.id)
-                    if (f) f.order = o.order
-                })
+                ok = true
                 toast.success('Orden de carpetas actualizado exitosamente');
             },
             true
         )
+        if (!ok) await fetchFolders(true)
     }
 
     /** Fetches modules for a specific folder (filtered on the server). */
@@ -384,8 +384,22 @@ export const useLmsStore = defineStore('lms', () => {
     }
 
     // ─── Reorder ───────────────────────────────────────────────────────────────
+    /** Optimistically applies the new order and sorts the list so the UI follows it. */
+    function applyOrder<T extends { id: number; order: number }>(
+        list: T[],
+        orders: { id: number; order: number }[]
+    ) {
+        orders.forEach(o => {
+            const item = list.find(x => x.id === o.id)
+            if (item) item.order = o.order
+        })
+        list.sort((a, b) => a.order - b.order)
+    }
+
     async function reorderModules(orders: { id: number; order: number }[]) {
-        return handleRequest(
+        applyOrder(modules.value, orders)
+        let ok = false
+        await handleRequest(
             'reorderModules',
             () =>
                 apiRepository.post({
@@ -393,18 +407,18 @@ export const useLmsStore = defineStore('lms', () => {
                     body: { orders },
                 }),
             () => {
-                orders.forEach(o => {
-                    const mod = modules.value.find(m => m.id === o.id)
-                    if (mod) mod.order = o.order
-                })
+                ok = true
                 toast.success('Orden de módulos actualizado exitosamente');
             },
             true
         )
+        if (!ok) await fetchModules(true)
     }
 
     async function reorderLessons(orders: { id: number; order: number }[]) {
-        return handleRequest(
+        applyOrder(lessons.value, orders)
+        let ok = false
+        await handleRequest(
             'reorderLessons',
             () =>
                 apiRepository.post({
@@ -412,14 +426,12 @@ export const useLmsStore = defineStore('lms', () => {
                     body: { orders },
                 }),
             () => {
-                orders.forEach(o => {
-                    const les = lessons.value.find(l => l.id === o.id)
-                    if (les) les.order = o.order
-                })
+                ok = true
                 toast.success('Orden de lecciones actualizado exitosamente');
             },
             true
         )
+        if (!ok) await fetchLessons(true)
     }
 
     // ─── Progress ──────────────────────────────────────────────────────────────

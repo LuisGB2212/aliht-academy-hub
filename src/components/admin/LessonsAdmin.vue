@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, nextTick, ref, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useLmsStore } from '@/stores/aliht-context-store'
 import { useLessonForm } from '@/composables/use-lesson-form'
 import type { ContentType } from '@/types/academy-type'
@@ -10,7 +10,7 @@ import {
     Search
 } from 'lucide-vue-next'
 import Modal from '@/components/ui/Modal.vue'
-import Sortable from 'sortablejs'
+import { useSortableList, moveItem } from '@/composables/use-sortable-list'
 
 const store = useLmsStore()
 const listRef = ref<HTMLElement | null>(null)
@@ -68,31 +68,12 @@ function onFileChange(event: Event, index: number, type: ContentType) {
 }
 
 // ─── Drag-to-reorder ────────────────────────────────────────────────────────
-const initSortable = () => {
-    if (!listRef.value) return
-    Sortable.create(listRef.value, {
-        handle: '.drag-handle',
-        animation: 150,
-        ghostClass: 'opacity-50',
-        onEnd: async (evt: any) => {
-            const { oldIndex, newIndex } = evt
-            if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return
-
-            const movedItem = store.lessons[oldIndex]
-            const newLessons = [...store.lessons]
-            newLessons.splice(oldIndex, 1)
-            newLessons.splice(newIndex, 0, movedItem)
-
-            await store.reorderLessons(
-                newLessons.map((l, i) => ({ id: l.id, order: i + 1 }))
-            )
-        },
-    })
-}
-
-onMounted(async () => {
-    nextTick(initSortable)
-})
+// Drag handles are hidden while searching, so indexes always refer to store.lessons
+useSortableList(listRef, (oldIndex, newIndex) =>
+    store.reorderLessons(
+        moveItem(store.lessons, oldIndex, newIndex).map((l, i) => ({ id: l.id, order: i + 1 }))
+    )
+)
 </script>
 
 <template>
@@ -101,8 +82,9 @@ onMounted(async () => {
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h2 class="text-xl font-bold text-foreground">Tutoriales (Guías)</h2>
-                <p class="text-sm text-muted-foreground text-pretty">Guías paso a paso para el uso de las
-                    funcionalidades.</p>
+                <p class="text-sm text-muted-foreground text-pretty">
+                    Guías paso a paso para el uso de las funcionalidades.
+                </p>
             </div>
             <button @click="startNew"
                 class="flex items-center gap-2 px-4 py-2 rounded-xl gradient-bg text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
@@ -112,7 +94,7 @@ onMounted(async () => {
         </div>
 
         <!-- Loading -->
-        <div v-if="store.isLoading" class="flex flex-col items-center justify-center py-12 text-muted-foreground">
+        <div v-if="store.isLoading && !store.lessons.length" class="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Loader2 class="w-8 h-8 animate-spin mb-2" />
             <p>Cargando tutoriales...</p>
         </div>
@@ -128,8 +110,8 @@ onMounted(async () => {
                 </div>
             </div>
             <div v-for="lesson in filteredLessons" :key="lesson.id"
-                class="flex flex-col md:flex-row md:items-center gap-4 bg-card rounded-xl p-4 hover:border-primary/30 transition-all group shadow-sm hover:shadow-md hover:scale-[1.01] hover:cursor-pointer">
-                <div
+                class="sortable-item flex flex-col md:flex-row md:items-center gap-4 bg-card rounded-xl p-4 hover:border-primary/30 transition-all group shadow-sm hover:shadow-md hover:scale-[1.01] hover:cursor-pointer">
+                <div v-if="!searchTerm"
                     class="hidden md:block cursor-grab opacity-40 hover:opacity-100 transition-opacity drag-handle p-1">
                     <GripVertical class="w-4 h-4 text-muted-foreground" />
                 </div>
