@@ -38,6 +38,7 @@ const searchQuery      = ref('')  // Palabra a buscar
 const searchResults    = ref<number[]>([]) // Páginas que contienen la palabra
 
 let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null
+let loadingTask: pdfjsLib.PDFDocumentLoadingTask | null = null
 let observer: IntersectionObserver | null = null
 
 
@@ -54,7 +55,13 @@ async function loadPdf(src: string) {
     searchResults.value = []
 
     try {
-        pdfDoc = await pdfjsLib.getDocument({ url: src, withCredentials: false }).promise
+        
+        loadingTask = pdfjsLib.getDocument({
+            url: src,
+            withCredentials: false
+        })
+
+        pdfDoc = await loadingTask.promise
         totalPages.value = pdfDoc.numPages
 
         await nextTick()
@@ -284,7 +291,12 @@ function setupObserver() {
 function cleanup() {
     observer?.disconnect()
     observer = null
-    pdfDoc?.destroy()
+
+    if (loadingTask) {
+        void loadingTask.destroy()
+        loadingTask = null
+    }
+
     pdfDoc = null
 }
 

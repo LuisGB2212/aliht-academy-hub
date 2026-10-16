@@ -8,7 +8,9 @@ import PdfViewer from '@/components/PdfViewer.vue'
 import EvaluationModal from '@/components/EvaluationModal.vue'
 import {
     CheckCircle2, ArrowLeft, ArrowRight, ExternalLink, PlayCircle,
-    Monitor, Globe, Trophy, Star, PartyPopper, AlertCircle
+    Monitor, Globe, Trophy, Star, PartyPopper, AlertCircle,
+    Download,
+    LoaderCircle
 } from 'lucide-vue-next'
 import type { ModuleEvaluation, EvaluationResult } from '@/types/academy-type'
 
@@ -20,6 +22,9 @@ const authStore = useAuthStore()
 const platformId = computed(() => parseInt(route.params.categoryId as string))
 const lessonId = computed(() => parseInt(route.params.lessonId as string))
 const loading = ref(false)
+
+const isDownloading = ref(false)
+const downloadProgress = ref<number | null>(null)
 
 // ─── Completion flags ──────────────────────────────────────────────────────────
 const videoEnded = ref(false)
@@ -134,6 +139,102 @@ function getContent(pc: any): string {
     if (!pc || !pc.content) return ''
     if (typeof pc.content === 'object' && pc.content !== null) return pc.content.value || ''
     return pc.content
+}
+
+async function downloadContent(pc: any): Promise<void> {
+    // Evitar solicitudes duplicadas
+    if (isDownloading.value) return
+
+    const url = getContent(pc)
+
+    if (!url) {
+        console.error('No se encontró la URL del archivo')
+        return
+    }
+
+    isDownloading.value = true
+    downloadProgress.value = 0
+
+    try {
+        const response = await fetch(url)
+
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`)
+        }
+
+        const contentLength = response.headers.get('Content-Length')
+        const totalBytes = contentLength ? Number(contentLength) : 0
+
+        if (!response.body) {
+            throw new Error('El navegador no permite leer el archivo')
+        }
+
+        const reader = response.body.getReader()
+        const chunks: Uint8Array[] = []
+        let receivedBytes = 0
+
+        while (true) {
+            const { done, value } = await reader.read()
+
+            if (done) break
+
+            if (value) {
+                chunks.push(value)
+                receivedBytes += value.byteLength
+
+                downloadProgress.value = totalBytes > 0
+                    ? Math.min(
+                        99,
+                        Math.round((receivedBytes / totalBytes) * 100)
+                    )
+                    : null
+            }
+        }
+
+        const blobParts: BlobPart[] = chunks.map((chunk) => {
+            const buffer = new ArrayBuffer(chunk.byteLength)
+            new Uint8Array(buffer).set(chunk)
+            return buffer
+        })
+
+        const blob = new Blob(blobParts, {
+            type: response.headers.get('Content-Type') || 'application/octet-stream'
+        })
+
+        const blobUrl = URL.createObjectURL(blob)
+
+        const extension = pc.type === 'pdf' ? 'pdf' : 'mp4'
+        const title = pc?.title?.trim()
+            .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+            .replace(/\s+/g, '_')
+
+        const filename = `${title || 'contenido-' + Date.now()}.${extension}`
+
+        const link = document.createElement('a')
+        link.href = blobUrl
+        link.download = filename
+
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+
+        downloadProgress.value = 100
+
+        // Dar tiempo al navegador para iniciar la descarga
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+
+    } catch (error) {
+        console.error('Error al descargar el archivo:', error)
+
+        const fallbackUrl = getContent(pc)
+
+        if (fallbackUrl) {
+            window.open(fallbackUrl, '_blank', 'noopener,noreferrer')
+        }
+    } finally {
+        isDownloading.value = false
+        downloadProgress.value = null
+    }
 }
 
 function onVideoEnded() {
@@ -400,6 +501,36 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
                                     Completar al finalizar
                                 </div>
                             </Transition>
+                            <!-- Boton de descargar -->
+                            <button
+                                v-if="platformContent && ['video', 'pdf'].includes(platformContent.type) && getContent(platformContent)"
+                                type="button"
+                                @click="downloadContent(platformContent)"
+                                :disabled="isDownloading"
+                                :aria-busy="isDownloading"
+                                class="shrink-0 flex items-center justify-center gap-2 px-6 py-3 rounded-xl gradient-bg text-sm text-primary-foreground border font-semibold shadow-md border-border transition-all"
+                                :class="isDownloading
+                                    ? 'opacity-70 cursor-wait'
+                                    : 'cursor-pointer hover:scale-[1.02]'"
+                            >
+                                <template v-if="isDownloading">
+                                    <LoaderCircle class="w-4 h-4 animate-spin shrink-0" />
+
+                                    <span v-if="downloadProgress !== null">
+                                        Descargando {{ downloadProgress }}%
+                                    </span>
+
+                                    <span v-else>
+                                        Descargando...
+                                    </span>
+                                </template>
+
+                                <template v-else>
+                                    <Download class="w-4 h-4" />
+                                    Descargar
+                                </template>
+                            </button>
+
                         </div>
                     </div>
                 </div>
@@ -409,7 +540,7 @@ const userName = computed(() => authStore.user?.name || 'Usuario')
 
                     <RouterLink v-if="prevLesson"
                         :to="{ name: 'lesson', params: { categoryId: platformId, lessonId: prevLesson.id } }"
-                        class="flex items-center gap-3 px-5 py-3 rounded-xl bg-card border border-border text-sm font-semibold text-muted-foreground hover:text-foreground hover:border-primary/30 transition">
+                        class="flex items-center gap-3 px-5 py-3 rounded-xl gradient-bg text-primary-foreground border border-border text-sm font-semibold text-muted-foreground hover:text-foreground hover:border-primary/30 transition">
                         <ArrowLeft class="w-4 h-4" />
                         <span class="hidden sm:inline">Anterior</span>
                     </RouterLink>
